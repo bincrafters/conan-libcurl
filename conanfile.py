@@ -19,9 +19,10 @@ class LibCurlConan(ConanFile):
     url="http://github.com/lasote/conan-libcurl"
     
     def config(self):
-         if self.options.with_openssl:
-            self.output.info("ENABLED OPENSSL DEPENDENCY!!")
+        if self.options.with_openssl:
             self.requires.add("OpenSSL/1.0.2d@lasote/stable", private=False)
+        else:
+            del self.requires["OpenSSL"]
         
 
     def conan_info(self):
@@ -45,12 +46,14 @@ class LibCurlConan(ConanFile):
             ld_flags = ""
             cpp_flags = ""
             c_flags = ""
-            suffix = ""
+            suffix = "--disable-ldap" # Until ldap is uploaded to conan
             
             if self.options.with_openssl:
                 ld_flags += 'LDFLAGS="%s"' % " ".join(["-L%s" % path for path in self.deps_cpp_info.lib_paths])
                 cpp_flags += 'CPPFLAGS="%s"' % " ".join(["-I%s" % path for path in self.deps_cpp_info.include_paths])
                 suffix += "--with-ssl "
+            else:
+                suffix += "--without-ssl"
             
             if not self.options.shared:
                 suffix += " --disable-shared" 
