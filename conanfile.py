@@ -46,7 +46,8 @@ class LibCurlConan(ConanFile):
             ld_flags = ""
             cpp_flags = ""
             c_flags = ""
-            suffix = "--disable-ldap " # Until ldap is uploaded to conan
+            # FIXME!! fails in travis, install in system requirements
+            suffix = "--disable-ldap --without-librtmp" # Until ldap is uploaded to conan or installed in system_requirements
             
             if self.options.with_openssl:
                 ld_flags += 'LDFLAGS="%s"' % " ".join(["-L%s" % path for path in self.deps_cpp_info.lib_paths])
