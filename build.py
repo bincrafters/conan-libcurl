@@ -43,7 +43,6 @@ if __name__ == "__main__":
         if not os.getenv("TRAVIS", False):   
             # Static x86
             test('-s arch=x86 -s build_type=Debug -o zlib:shared=False')
-            exit(1)
             test('-s arch=x86 -s build_type=Release -o zlib:shared=False')
     
             # Shared x86
