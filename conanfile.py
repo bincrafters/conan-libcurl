@@ -18,12 +18,6 @@ class LibCurlConan(ConanFile):
     exports = "CMakeLists.txt"
     url="http://github.com/lasote/conan-libcurl"
     
-    def system_requirements(self):
-        if self.settings.os == "Linux": # Further check for debian based missing
-            self.run("sudo apt-get install librtmp1 || true")
-            self.run("sudo apt-get install libldap-2.4-2 || true")
-            self.run("sudo apt-get install libidn11 || true")
-    
     def config(self):
         if self.options.with_openssl:
             self.requires.add("OpenSSL/1.0.2d@lasote/stable", private=False)
@@ -110,7 +104,7 @@ class LibCurlConan(ConanFile):
 
     def package_info(self):
         self.cpp_info.libs = ['curl']
-        self.cpp_info.libs.extend(["rt"])
+        self.cpp_info.libs.extend(["rt", "rtmp", "ldap", "idn"])
 
 
 def replace_in_file(file_path, search, replace):
