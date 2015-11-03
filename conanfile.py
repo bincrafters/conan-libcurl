@@ -104,6 +104,7 @@ class LibCurlConan(ConanFile):
 
     def package_info(self):
         self.cpp_info.libs = ['curl']
+        self.cpp_info.libs.extend(["rt"])
 
 
 def replace_in_file(file_path, search, replace):
