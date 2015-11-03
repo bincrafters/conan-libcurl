@@ -46,7 +46,7 @@ class LibCurlConan(ConanFile):
             ld_flags = ""
             cpp_flags = ""
             c_flags = ""
-            suffix = "--disable-ldap" # Until ldap is uploaded to conan
+            suffix = "--disable-ldap " # Until ldap is uploaded to conan
             
             if self.options.with_openssl:
                 ld_flags += 'LDFLAGS="%s"' % " ".join(["-L%s" % path for path in self.deps_cpp_info.lib_paths])
