@@ -100,7 +100,8 @@ CONAN_BASIC_SETUP()
     def package_info(self):
         if not self.settings.os == "Windows":
             self.cpp_info.libs = ['curl']
-            self.cpp_info.libs.extend(["rt"])
+            if self.settings.os == "Linux":
+                self.cpp_info.libs.extend(["rt"])
         else:
             self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
             self.cpp_info.libs.append('Ws2_32')
