@@ -29,6 +29,15 @@ if __name__ == "__main__":
     builder = ConanMultiPackager(args, username, channel)
     builder.add_common_builds(shared_option_name="littlecms:shared", visual_versions=[10, 12, 14])
     
+    if platform.system() != "Darwin":
+        # Remove x86 builds in osx
+        osx_builds = []
+        for build in builder.builds:
+            if not build[0]["arch"] == "x86":
+                osx_builds.append(build)
+            
+        builder.builds = osx_builds  
+    
     if use_docker:  
         builder.docker_pack(current_page, total_pages, gcc_versions)
     else:
