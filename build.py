@@ -1,58 +1,38 @@
 import os
-import platform
+from conan.packager import ConanMultiPackager
 import sys
+import platform
+from copy import copy
+
 
 if __name__ == "__main__":
-    os.system('conan export lasote/stable')
+    channel = os.getenv("CONAN_CHANNEL", "testing")
+    username = os.getenv("CONAN_USERNAME", "lasote")
+    current_page = os.getenv("CONAN_CURRENT_PAGE", "1")
+    total_pages = os.getenv("CONAN_TOTAL_PAGES", "1")
+    gcc_versions = os.getenv("CONAN_GCC_VERSIONS", None)
+    gcc_versions = gcc_versions.split(",") if gcc_versions else None
+    use_docker = os.getenv("CONAN_USE_DOCKER", False)
+    upload = os.getenv("CONAN_UPLOAD", False)
+    reference = os.getenv("CONAN_REFERENCE")
+    password = os.getenv("CONAN_PASSWORD")
+    travis = os.getenv("TRAVIS", False)
+    travis_branch = os.getenv("TRAVIS_BRANCH", None)
+    appveyor = os.getenv("APPVEYOR", False)
+    appveyor_branch = os.getenv("APPVEYOR_REPO_BRANCH", None)
+
+    channel = "stable" if travis and travis_branch=="master" else channel
+    channel = "stable" if appveyor and appveyor_branch=="master" and not os.getenv("APPVEYOR_PULL_REQUEST_NUMBER") else channel
+    os.environ["CONAN_CHANNEL"] = channel # Override the environment value for test/conanfile.py file
+
+    args = " ".join(sys.argv[1:])
+    builder = ConanMultiPackager(args, username, channel)
+    builder.add_common_builds(shared_option_name="littlecms:shared", visual_versions=[10, 12, 14])
     
-    def test(settings):
-        argv =  " ".join(sys.argv[1:])
-        command = "conan test %s %s" % (settings, argv)
-        retcode = os.system(command)
-        if retcode != 0:
-            exit("Error while executing:\n\t %s" % command)
+    if use_docker:  
+        builder.docker_pack(current_page, total_pages, gcc_versions)
+    else:
+        builder.pack(current_page, total_pages)
 
-
-    if platform.system() == "Windows":
-        compiler = '-s compiler="Visual Studio" -s compiler.version=12 '
-        # Static x86
-        test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MDd -o zlib:shared=False')
-        test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MTd -o zlib:shared=False')
-        test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MD -o zlib:shared=False')
-        test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MT -o zlib:shared=False')
-
-        # Static x86_64
-        test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MDd -o zlib:shared=False')
-        test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MTd -o zlib:shared=False')
-        test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MD -o zlib:shared=False')
-        test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MT -o zlib:shared=False')
-
-        # Shared x86
-        test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MDd -o zlib:shared=True')
-        test(compiler + '-s arch=x86 -s build_type=Debug -s compiler.runtime=MTd -o zlib:shared=True')
-        test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MD -o zlib:shared=True')
-        test(compiler + '-s arch=x86 -s build_type=Release -s compiler.runtime=MT -o zlib:shared=True')
-
-        # Shared x86_64
-        test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MDd -o zlib:shared=True')
-        test(compiler + '-s arch=x86_64 -s build_type=Debug -s compiler.runtime=MTd -o zlib:shared=True')
-        test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MD -o zlib:shared=True')
-        test(compiler + '-s arch=x86_64 -s build_type=Release -s compiler.runtime=MT -o zlib:shared=True')
-
-    else:  # Compiler and version not specified, please set it in your home/.conan/conan.conf (Valid for Macos and Linux)
-        if not os.getenv("TRAVIS", False):   
-            # Static x86
-            test('-s arch=x86 -s build_type=Debug -o zlib:shared=False')
-            test('-s arch=x86 -s build_type=Release -o zlib:shared=False')
-    
-            # Shared x86
-            test('-s arch=x86 -s build_type=Debug -o zlib:shared=True')
-            test('-s arch=x86 -s build_type=Release -o zlib:shared=True')
-
-        # Static x86_64
-        test('-s arch=x86_64 -s build_type=Debug -o zlib:shared=False')
-        test('-s arch=x86_64 -s build_type=Release -o zlib:shared=False')
-
-        # Shared x86_64
-        test('-s arch=x86_64 -s build_type=Debug -o zlib:shared=True')
-        test('-s arch=x86_64 -s build_type=Release -o zlib:shared=True')
+    if upload and reference and password:
+        builder.upload_packages(reference, password)
