@@ -27,7 +27,7 @@ class LibCurlConan(ConanFile):
         
     def source(self):
         zip_name = "curl-%s.tar.gz" % self.version
-        download("http://curl.haxx.se/download/%s" % zip_name, zip_name)
+        download("https://curl.haxx.se/download/%s" % zip_name, zip_name)
         unzip(zip_name)
         os.unlink(zip_name)
         if self.settings.os != "Windows":
