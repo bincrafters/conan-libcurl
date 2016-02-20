@@ -59,6 +59,14 @@ class LibCurlConan(ConanFile):
            
         else:
             # Do not compile curl tool, just library
+            conan_magic_lines = '''project(CURL)
+cmake_minimum_required(VERSION 3.0)
+include(../conanbuildinfo.cmake)
+CONAN_BASIC_SETUP()
+'''
+            replace_in_file("%s/CMakeLists.txt" % self.ZIP_FOLDER_NAME, "cmake_minimum_required(VERSION 2.8 FATAL_ERROR)", conan_magic_lines)
+            replace_in_file("%s/CMakeLists.txt" % self.ZIP_FOLDER_NAME, "project( CURL C )", "")
+            
             replace_in_file("%s/src/CMakeLists.txt" % self.ZIP_FOLDER_NAME, "add_executable(", "IF(0)\n add_executable(")
             replace_in_file("%s/src/CMakeLists.txt" % self.ZIP_FOLDER_NAME, "install(TARGETS ${EXE_NAME} DESTINATION bin)", "ENDIF()") # EOF
             cmake = CMake(self.settings)
