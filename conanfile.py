@@ -98,10 +98,12 @@ CONAN_BASIC_SETUP()
                 self.copy(pattern="*.a", dst="lib", src=self.ZIP_FOLDER_NAME, keep_path=False)
 
     def package_info(self):
-        if not self.settings.os == "Windows":
+        if self.settings.os != "Windows":
             self.cpp_info.libs = ['curl']
             if self.settings.os == "Linux":
                 self.cpp_info.libs.extend(["rt"])
+            if self.settings.os == "Macos":
+                self.cpp_info.libs.extend(["ldap"])
         else:
             self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
             self.cpp_info.libs.append('Ws2_32')
