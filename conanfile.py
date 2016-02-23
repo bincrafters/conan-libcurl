@@ -22,6 +22,7 @@ class LibCurlConan(ConanFile):
     def config(self):
         if self.options.with_openssl:
             self.requires.add("OpenSSL/1.0.2e@lasote/stable", private=False)
+            self.options["OpenSSL"].shared = self.options.shared
         else:
             del self.requires["OpenSSL"]
         
