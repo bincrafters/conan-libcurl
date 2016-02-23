@@ -4,7 +4,7 @@ environment:
     PYTHON_VERSION: "2.7.8"
     PYTHON_ARCH: "32"
     
-    # CONAN_UPLOAD: 0
+    CONAN_UPLOAD: 1
     CONAN_REFERENCE: "libcurl/7.47.1"
     CONAN_USERNAME: "lasote"
     CONAN_CHANNEL: "ci"
