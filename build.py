@@ -27,7 +27,8 @@ if __name__ == "__main__":
 
     args = " ".join(sys.argv[1:])
     builder = ConanMultiPackager(args, username, channel)
-    builder.add_common_builds(shared_option_name="libcurl:shared", visual_versions=[10, 12, 14])
+    # Not generate shared packages by now, there are problems with openssl and libefence in linux
+    builder.add_common_builds(visual_versions=[10, 12, 14])
     
 #     if platform.system() == "Darwin":
 #         # Remove x86 builds in osx

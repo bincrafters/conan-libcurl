@@ -11,7 +11,7 @@ class LibCurlConan(ConanFile):
     ZIP_FOLDER_NAME = "curl-%s" % version
     generators = "cmake", "txt"
     settings = "os", "arch", "compiler", "build_type"
-    options = {"shared": [True, False], 
+    options = {"shared": [True, False], # SHARED IN LINUX IS HAVING PROBLEMS WITH LIBEFENCE
                "with_openssl": [True, False], 
                "disable_threads": [True, False]}
     default_options = "shared=False", "with_openssl=True", "disable_threads=False"
@@ -21,7 +21,7 @@ class LibCurlConan(ConanFile):
     
     def config(self):
         if self.options.with_openssl:
-            self.requires.add("OpenSSL/1.0.2e@lasote/stable", private=False)
+            self.requires.add("OpenSSL/1.0.2f@lasote/stable", private=False)
             self.options["OpenSSL"].shared = self.options.shared
         else:
             del self.requires["OpenSSL"]
@@ -53,9 +53,13 @@ class LibCurlConan(ConanFile):
             
             if self.options.disable_threads:
                 suffix += " --disable-thread" 
- 
             
-            self.run("cd %s && %s ./configure %s" % (self.ZIP_FOLDER_NAME, env.command_line, suffix))
+            # Hack for configure, don't know why fails because it's not able to find libefence.so
+            command_line = env.command_line.replace("-lefence", "")
+ 
+            configure = "cd %s && %s ./configure %s" % (self.ZIP_FOLDER_NAME, command_line, suffix)
+            self.output.warn(configure)
+            self.run(configure)
             self.run("cd %s && %s make" % (self.ZIP_FOLDER_NAME, env.command_line))
            
         else:
