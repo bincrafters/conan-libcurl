@@ -20,6 +20,10 @@ class LibCurlConan(ConanFile):
     license="https://curl.haxx.se/docs/copyright.html"
     
     def config(self):
+        try: # Try catch can be removed when conan 0.8 is released
+            del self.settings.compiler.libcxx 
+        except: 
+            pass
         if self.options.with_openssl:
             self.requires.add("OpenSSL/1.0.2e@lasote/stable", private=False)
             self.options["OpenSSL"].shared = self.options.shared
