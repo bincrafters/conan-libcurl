@@ -13,8 +13,9 @@ class LibCurlConan(ConanFile):
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False], # SHARED IN LINUX IS HAVING PROBLEMS WITH LIBEFENCE
                "with_openssl": [True, False], 
-               "disable_threads": [True, False]}
-    default_options = "shared=False", "with_openssl=True", "disable_threads=False"
+               "disable_threads": [True, False],
+               "with_ldap": [True, False]}
+    default_options = "shared=False", "with_openssl=True", "disable_threads=False", "with_ldap=True"
     exports = "CMakeLists.txt"
     url="http://github.com/lasote/conan-libcurl"
     license="https://curl.haxx.se/docs/copyright.html"
@@ -56,7 +57,10 @@ class LibCurlConan(ConanFile):
                 suffix += " --disable-shared" 
             
             if self.options.disable_threads:
-                suffix += " --disable-thread" 
+                suffix += " --disable-thread"
+
+            if not self.options.with_ldap:
+                suffix += " --disable-ldap"
             
             # Hack for configure, don't know why fails because it's not able to find libefence.so
             command_line = env.command_line.replace("-lefence", "")
@@ -112,7 +116,8 @@ CONAN_BASIC_SETUP()
             if self.settings.os == "Linux":
                 self.cpp_info.libs.extend(["rt"])
             if self.settings.os == "Macos":
-                self.cpp_info.libs.extend(["ldap"])
+                if self.options.with_ldap:
+                    self.cpp_info.libs.extend(["ldap"])
         else:
             self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
             self.cpp_info.libs.append('Ws2_32')
