@@ -26,14 +26,14 @@ class LibCurlConan(ConanFile):
         except: 
             pass
         if self.options.with_openssl:
-            self.requires.add("OpenSSL/1.0.2e@lasote/stable", private=False)
+            self.requires.add("OpenSSL/1.0.2g@lasote/stable", private=False)
             self.options["OpenSSL"].shared = self.options.shared
         else:
             del self.requires["OpenSSL"]
         
     def source(self):
         zip_name = "curl-%s.tar.gz" % self.version
-        download("https://curl.haxx.se/download/%s" % zip_name, zip_name)
+        download("https://curl.haxx.se/download/%s" % zip_name, zip_name, verify=False)
         unzip(zip_name)
         os.unlink(zip_name)
         if self.settings.os != "Windows":
