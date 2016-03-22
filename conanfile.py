@@ -15,7 +15,7 @@ class LibCurlConan(ConanFile):
                "with_openssl": [True, False], 
                "disable_threads": [True, False],
                "with_ldap": [True, False]}
-    default_options = "shared=False", "with_openssl=True", "disable_threads=False", "with_ldap=True"
+    default_options = "shared=False", "with_openssl=True", "disable_threads=False", "with_ldap=False"
     exports = "CMakeLists.txt"
     url="http://github.com/lasote/conan-libcurl"
     license="https://curl.haxx.se/docs/copyright.html"
