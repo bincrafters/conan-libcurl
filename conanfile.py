@@ -21,10 +21,7 @@ class LibCurlConan(ConanFile):
     license="https://curl.haxx.se/docs/copyright.html"
     
     def config(self):
-        try: # Try catch can be removed when conan 0.8 is released
-            del self.settings.compiler.libcxx 
-        except: 
-            pass
+        del self.settings.compiler.libcxx
         if self.options.with_openssl:
             self.requires.add("OpenSSL/1.0.2g@lasote/stable", private=False)
             self.options["OpenSSL"].shared = self.options.shared
@@ -36,6 +33,7 @@ class LibCurlConan(ConanFile):
         download("https://curl.haxx.se/download/%s" % zip_name, zip_name, verify=False)
         unzip(zip_name)
         os.unlink(zip_name)
+        download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem")
         if self.settings.os != "Windows":
             self.run("chmod +x ./%s/configure" % self.ZIP_FOLDER_NAME)
 
@@ -61,6 +59,8 @@ class LibCurlConan(ConanFile):
 
             if not self.options.with_ldap:
                 suffix += " --disable-ldap"
+                
+            suffix += ' --with-ca-bundle=cacert.pem'
             
             # Hack for configure, don't know why fails because it's not able to find libefence.so
             command_line = env.command_line.replace("-lefence", "")
@@ -96,6 +96,9 @@ CONAN_BASIC_SETUP()
         # Copying zlib.h, zutil.h, zconf.h
         self.copy("*.h", "include/curl", "%s" % (self.ZIP_FOLDER_NAME), keep_path=False)
 
+        # Copy the certs to be used by client
+        self.copy(pattern="cacert.pem", keep_path=False)
+        
         # Copying static and dynamic libs
         if self.settings.os == "Windows":
             if self.options.shared:
