@@ -33,7 +33,7 @@ class LibCurlConan(ConanFile):
         download("https://curl.haxx.se/download/%s" % zip_name, zip_name, verify=False)
         unzip(zip_name)
         os.unlink(zip_name)
-        download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem")
+        download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem", verify=False)
         if self.settings.os != "Windows":
             self.run("chmod +x ./%s/configure" % self.ZIP_FOLDER_NAME)
 
