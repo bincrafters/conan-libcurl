@@ -8,11 +8,16 @@
 int main(void)
 {
   CURL *curl;
-  CURLcode res;
   int retval = 0;
  
   curl = curl_easy_init();
   if(curl) {
+    CURLcode res;
+    char errbuf[CURL_ERROR_SIZE];
+
+    /* provide a buffer to store errors in */
+    curl_easy_setopt(curl, CURLOPT_ERRORBUFFER, errbuf);
+
     curl_easy_setopt(curl, CURLOPT_URL, "https://httpbin.org/get");
     res = curl_easy_perform(curl);
  
@@ -28,7 +33,7 @@ int main(void)
         retval = 1;
       }
     } else {
-      printf("Request failed\n");
+      printf("Request failed %d, %s\n", res, errbuf);
       retval = 2;
     }
  
