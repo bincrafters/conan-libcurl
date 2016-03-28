@@ -25,6 +25,7 @@ class DefaultNameConan(ConanFile):
     def imports(self):
         self.copy(pattern="*.dll", dst="bin", src="bin")
         self.copy(pattern="*.dylib", dst="bin", src="lib")
+        self.copy(pattern="*cacert*", dst="bin")
         
     def test(self):
         self.run("cd bin && .%smain" % os.sep)

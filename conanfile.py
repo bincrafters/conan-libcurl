@@ -14,8 +14,10 @@ class LibCurlConan(ConanFile):
     options = {"shared": [True, False], # SHARED IN LINUX IS HAVING PROBLEMS WITH LIBEFENCE
                "with_openssl": [True, False], 
                "disable_threads": [True, False],
-               "with_ldap": [True, False]}
-    default_options = "shared=False", "with_openssl=True", "disable_threads=False", "with_ldap=False"
+               "with_ldap": [True, False], 
+               "custom_cacert": [True, False],
+               "darwin_ssl": [True, False]}
+    default_options = "shared=False", "with_openssl=True", "disable_threads=False", "with_ldap=False", "custom_cacert=False", "darwin_ssl=True"
     exports = "CMakeLists.txt"
     url="http://github.com/lasote/conan-libcurl"
     license="https://curl.haxx.se/docs/copyright.html"
@@ -23,11 +25,17 @@ class LibCurlConan(ConanFile):
     def config(self):
         del self.settings.compiler.libcxx
         if self.options.with_openssl:
-            if self.settings.os != "Macos":
+            if self.settings.os != "Macos" or not self.options.darwin_ssl:
                 self.requires.add("OpenSSL/1.0.2g@lasote/stable", private=False)
                 self.options["OpenSSL"].shared = self.options.shared
         else:
             del self.requires["OpenSSL"]
+            
+        if self.settings.os != "Macos":
+            del self.options["darwin_ssl"]
+        else:
+            if self.options.darwin_ssl:
+               self.requires.add("zlib/1.2.8@lasote/stable", private=False) 
         
     def source(self):
         zip_name = "curl-%s.tar.gz" % self.version
@@ -48,12 +56,12 @@ class LibCurlConan(ConanFile):
             
             suffix = ""
             if self.options.with_openssl:
-                if self.settings.os == "Macos":
-                    suffix += "--with-darwinssl"
+                if self.settings.os == "Macos" and self.options.darwin_ssl:
+                    suffix += "--with-darwinssl "
                 else:
                     suffix += "--with-ssl "
             else:
-                suffix += "--without-ssl"
+                suffix += "--without-ssl "
             
             if not self.options.shared:
                 suffix += " --disable-shared" 
@@ -63,8 +71,9 @@ class LibCurlConan(ConanFile):
 
             if not self.options.with_ldap:
                 suffix += " --disable-ldap"
-                
-            suffix += ' --with-ca-bundle=cacert.pem'
+        
+            if self.options.custom_cacert:
+                suffix += ' --with-ca-bundle=cacert.pem'
             
             # Hack for configure, don't know why fails because it's not able to find libefence.so
             command_line = env.command_line.replace("-lefence", "")
