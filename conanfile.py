@@ -32,7 +32,10 @@ class LibCurlConan(ConanFile):
             del self.requires["OpenSSL"]
             
         if self.settings.os != "Macos":
-            del self.options["darwin_ssl"]
+            try:
+                self.options.remove("darwin_ssl")
+            except:
+                pass
         else:
             if self.options.darwin_ssl:
                self.requires.add("zlib/1.2.8@lasote/stable", private=False) 
