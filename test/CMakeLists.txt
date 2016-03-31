@@ -23,4 +23,24 @@ if(APPLE)
    ADD_FRAMEWORK(Cocoa main)
    ADD_FRAMEWORK(Security main)
 endif()
-TARGET_LINK_LIBRARIES(main ${CONAN_LIBS})
+
+find_package(CURL)
+
+if(CURL_FOUND)
+	TARGET_LINK_LIBRARIES(main ${CURL_LIBRARIES})
+	include_directories(${CURL_INCLUDE_DIRS})
+endif()
+
+find_package(OpenSSL)
+
+if(OPENSSL_FOUND)
+	TARGET_LINK_LIBRARIES(main ${OPENSSL_LIBRARIES})
+	include_directories(${OPENSSL_INCLUDE_DIRS})
+endif()
+
+find_package(ZLIB)
+
+if(ZLIB_FOUND)
+	TARGET_LINK_LIBRARIES(main ${ZLIB_LIBRARIES})
+	include_directories(${ZLIB_INCLUDE_DIRS})
+endif()

@@ -18,7 +18,7 @@ class LibCurlConan(ConanFile):
                "custom_cacert": [True, False],
                "darwin_ssl": [True, False]}
     default_options = "shared=False", "with_openssl=True", "disable_threads=False", "with_ldap=False", "custom_cacert=False", "darwin_ssl=True"
-    exports = "CMakeLists.txt"
+    exports = ["CMakeLists.txt", "FindCURL.cmake"]
     url="http://github.com/lasote/conan-libcurl"
     license="https://curl.haxx.se/docs/copyright.html"
     
@@ -109,6 +109,10 @@ CONAN_BASIC_SETUP()
         """ Define your conan structure: headers, libs, bins and data. After building your
             project, this method is called to create a defined structure:
         """
+        
+        # Copy findZLIB.cmake to package
+        self.copy("FindCURL.cmake", ".", ".")
+        
         # Copying zlib.h, zutil.h, zconf.h
         self.copy("*.h", "include/curl", "%s" % (self.ZIP_FOLDER_NAME), keep_path=False)
 
