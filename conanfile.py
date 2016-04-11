@@ -141,6 +141,8 @@ CONAN_BASIC_SETUP()
             if self.settings.os == "Macos":
                 if self.options.with_ldap:
                     self.cpp_info.libs.extend(["ldap"])
+                if self.options.darwin_ssl:
+                    self.cpp_info.libs.extend(["/System/Library/Frameworks/Cocoa.framework", "/System/Library/Frameworks/Security.framework"])
         else:
             self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
             self.cpp_info.libs.append('Ws2_32')
