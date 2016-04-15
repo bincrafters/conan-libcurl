@@ -81,6 +81,11 @@ class LibCurlConan(ConanFile):
             # Hack for configure, don't know why fails because it's not able to find libefence.so
             command_line = env.command_line.replace("-lefence", "")
  
+            old_str = "-install_name \$rpath/"
+            new_str = "-install_name "
+            replace_in_file("%s/configure" % self.ZIP_FOLDER_NAME, old_str, new_str)
+ 
+ 
             configure = "cd %s && %s ./configure %s" % (self.ZIP_FOLDER_NAME, command_line, suffix)
             self.output.warn(configure)
             self.run(configure)
