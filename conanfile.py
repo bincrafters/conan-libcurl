@@ -16,8 +16,12 @@ class LibCurlConan(ConanFile):
                "disable_threads": [True, False],
                "with_ldap": [True, False], 
                "custom_cacert": [True, False],
-               "darwin_ssl": [True, False]}
-    default_options = "shared=False", "with_openssl=True", "disable_threads=False", "with_ldap=False", "custom_cacert=False", "darwin_ssl=True"
+               "darwin_ssl": [True, False],
+               "with_libssh2": [True, False],
+               "with_libidn": [True, False]}
+    default_options = "shared=False", "with_openssl=True", "disable_threads=False", \
+                      "with_ldap=False", "custom_cacert=False", "darwin_ssl=True",  \
+                      "with_libssh2=False", "with_libidn=False"
     exports = ["CMakeLists.txt", "FindCURL.cmake"]
     url="http://github.com/lasote/conan-libcurl"
     license="https://curl.haxx.se/docs/copyright.html"
@@ -57,7 +61,10 @@ class LibCurlConan(ConanFile):
 
         if self.settings.os == "Linux" or self.settings.os == "Macos":
             
-            suffix = ""
+
+            suffix = "--without-libidn " if not self.options.with_libidn else "--with-libidn"
+            suffix += "--without-libssh2 " if not self.options.with_libssh2 else "--with-libssh2"
+            
             if self.options.with_openssl:
                 if self.settings.os == "Macos" and self.options.darwin_ssl:
                     suffix += "--with-darwinssl "
@@ -143,11 +150,16 @@ CONAN_BASIC_SETUP()
             self.cpp_info.libs = ['curl']
             if self.settings.os == "Linux":
                 self.cpp_info.libs.extend(["rt"])
+                if self.options.with_libssh2:
+                   self.cpp_info.libs.extend(["ssh2"]) 
+                if self.options.with_libidn:
+                   self.cpp_info.libs.extend(["idn"]) 
             if self.settings.os == "Macos":
                 if self.options.with_ldap:
                     self.cpp_info.libs.extend(["ldap"])
                 if self.options.darwin_ssl:
                     self.cpp_info.libs.extend(["/System/Library/Frameworks/Cocoa.framework", "/System/Library/Frameworks/Security.framework"])
+                    
         else:
             self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
             self.cpp_info.libs.append('Ws2_32')

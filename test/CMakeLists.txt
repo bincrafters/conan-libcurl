@@ -1,6 +1,6 @@
 PROJECT(MyHello)
 cmake_minimum_required(VERSION 3.0)
-include(conanbuildinfo.cmake)
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 CONAN_BASIC_SETUP()
 
 ADD_EXECUTABLE(main main.c)
