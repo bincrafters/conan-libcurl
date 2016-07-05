@@ -18,10 +18,13 @@ class LibCurlConan(ConanFile):
                "custom_cacert": [True, False],
                "darwin_ssl": [True, False],
                "with_libssh2": [True, False],
-               "with_libidn": [True, False]}
+               "with_libidn": [True, False], 
+               "with_librtmp": [True, False],
+               "with_libmetalink": [True, False]}
     default_options = "shared=False", "with_openssl=True", "disable_threads=False", \
                       "with_ldap=False", "custom_cacert=False", "darwin_ssl=True",  \
-                      "with_libssh2=False", "with_libidn=False"
+                      "with_libssh2=False", "with_libidn=False", "with_librtmp=False", \
+                      "with_libmetalink=False"
     exports = ["CMakeLists.txt", "FindCURL.cmake"]
     url="http://github.com/lasote/conan-libcurl"
     license="https://curl.haxx.se/docs/copyright.html"
@@ -64,6 +67,8 @@ class LibCurlConan(ConanFile):
 
             suffix = "--without-libidn " if not self.options.with_libidn else "--with-libidn"
             suffix += "--without-libssh2 " if not self.options.with_libssh2 else "--with-libssh2"
+            suffix += " --without-librtmp" if not self.options.with_librtmp else "--with-librtmp"
+            suffix += " --without-libmetalink" if not self.options.with_libmetalink else "--with-libmetalink"
             
             if self.options.with_openssl:
                 if self.settings.os == "Macos" and self.options.darwin_ssl:
@@ -154,6 +159,8 @@ CONAN_BASIC_SETUP()
                    self.cpp_info.libs.extend(["ssh2"]) 
                 if self.options.with_libidn:
                    self.cpp_info.libs.extend(["idn"]) 
+                if self.options.with_librtmp:
+                    self.cpp_info.libs.extend(["rtmp"]) 
             if self.settings.os == "Macos":
                 if self.options.with_ldap:
                     self.cpp_info.libs.extend(["ldap"])
