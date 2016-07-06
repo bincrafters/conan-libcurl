@@ -43,10 +43,8 @@ class LibCurlConan(ConanFile):
                 self.options.remove("darwin_ssl")
             except:
                 pass
-        else:
-            if self.options.darwin_ssl:
-               self.requires.add("zlib/1.2.8@lasote/stable", private=False) 
-        
+        self.requires.add("zlib/1.2.8@lasote/stable", private=False)
+
     def source(self):
         zip_name = "curl-%s.tar.gz" % self.version
         download("https://curl.haxx.se/download/%s" % zip_name, zip_name, verify=False)
