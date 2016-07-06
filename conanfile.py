@@ -63,10 +63,10 @@ class LibCurlConan(ConanFile):
         if self.settings.os == "Linux" or self.settings.os == "Macos":
             
 
-            suffix = "--without-libidn " if not self.options.with_libidn else "--with-libidn"
-            suffix += "--without-libssh2 " if not self.options.with_libssh2 else "--with-libssh2"
-            suffix += " --without-librtmp" if not self.options.with_librtmp else "--with-librtmp"
-            suffix += " --without-libmetalink" if not self.options.with_libmetalink else "--with-libmetalink"
+            suffix = " --without-libidn " if not self.options.with_libidn else "--with-libidn"
+            suffix += " --without-libssh2 " if not self.options.with_libssh2 else "--with-libssh2"
+            suffix += " --without-librtmp " if not self.options.with_librtmp else "--with-librtmp"
+            suffix += " --without-libmetalink " if not self.options.with_libmetalink else "--with-libmetalink"
             
             if self.options.with_openssl:
                 if self.settings.os == "Macos" and self.options.darwin_ssl:
