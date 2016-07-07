@@ -7,7 +7,7 @@ from conans import CMake
 
 class LibCurlConan(ConanFile):
     name = "libcurl"
-    version = "7.47.1"
+    version = "7.49.1"
     ZIP_FOLDER_NAME = "curl-%s" % version
     generators = "cmake", "txt"
     settings = "os", "arch", "compiler", "build_type"
