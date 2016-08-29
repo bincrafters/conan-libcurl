@@ -35,6 +35,8 @@ class LibCurlConan(ConanFile):
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
                 self.requires.add("OpenSSL/1.0.2g@lasote/stable", private=False)
                 self.options["OpenSSL"].shared = self.options.shared
+            elif self.settings.os == "Macos" and self.options.darwin_ssl:
+                self.requires.add("zlib/1.2.8@lasote/stable", private=False)
         else:
             del self.requires["OpenSSL"]
             
@@ -163,8 +165,10 @@ CONAN_BASIC_SETUP()
                 if self.options.with_ldap:
                     self.cpp_info.libs.extend(["ldap"])
                 if self.options.darwin_ssl:
-                    self.cpp_info.libs.extend(["/System/Library/Frameworks/Cocoa.framework", "/System/Library/Frameworks/Security.framework"])
-                    
+                    # self.cpp_info.libs.extend(["/System/Library/Frameworks/Cocoa.framework", "/System/Library/Frameworks/Security.framework"])
+                    self.cpp_info.exelinkflags.append("-framework Cocoa")
+                    self.cpp_info.exelinkflags.append("-framework Security")
+                    self.cpp_info.sharedlinkflags = self.cpp_info.exelinkflags    
         else:
             self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
             self.cpp_info.libs.append('Ws2_32')
