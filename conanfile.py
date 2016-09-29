@@ -7,7 +7,7 @@ from conans import CMake
 
 class LibCurlConan(ConanFile):
     name = "libcurl"
-    version = "7.49.1"
+    version = "7.50.3"
     ZIP_FOLDER_NAME = "curl-%s" % version
     generators = "cmake", "txt"
     settings = "os", "arch", "compiler", "build_type"
@@ -33,7 +33,7 @@ class LibCurlConan(ConanFile):
         del self.settings.compiler.libcxx
         if self.options.with_openssl:
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
-                self.requires.add("OpenSSL/1.0.2g@lasote/stable", private=False)
+                self.requires.add("OpenSSL/1.0.2i@lasote/stable", private=False)
                 self.options["OpenSSL"].shared = self.options.shared
             elif self.settings.os == "Macos" and self.options.darwin_ssl:
                 self.requires.add("zlib/1.2.8@lasote/stable", private=False)
@@ -77,6 +77,8 @@ class LibCurlConan(ConanFile):
                     suffix += "--with-ssl "
             else:
                 suffix += "--without-ssl "
+                
+            suffix += "--with-zlib=%s " % self.deps_cpp_info["zlib"].lib_paths[0]
             
             if not self.options.shared:
                 suffix += " --disable-shared" 
@@ -100,8 +102,13 @@ class LibCurlConan(ConanFile):
  
             configure = "cd %s && %s ./configure %s" % (self.ZIP_FOLDER_NAME, command_line, suffix)
             self.output.warn(configure)
+            
+            # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
+            replace_in_file("%s/configure" % self.ZIP_FOLDER_NAME, 'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"', 'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"')
+            
+            self.output.warn(configure)
             self.run(configure)
-            self.run("cd %s && %s make" % (self.ZIP_FOLDER_NAME, env.command_line))
+            self.run("cd %s && env %s make" % (self.ZIP_FOLDER_NAME, env.command_line))
            
         else:
             # Do not compile curl tool, just library

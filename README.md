@@ -5,7 +5,7 @@
 
 [Conan.io](https://conan.io) package for lib cURL library
 
-The packages generated with this **conanfile** can be found in [conan.io](https://conan.io/source/libcurl/7.49.1/lasote/stable).
+The packages generated with this **conanfile** can be found in [conan.io](https://conan.io/source/libcurl/7.50.3/lasote/stable).
 
 ## Build packages
 
@@ -15,20 +15,20 @@ Download conan client from [Conan.io](https://conan.io) and run:
 
 ## Upload packages to server
 
-    $ conan upload libcurl/7.49.1@lasote/stable --all
+    $ conan upload libcurl/7.50.3@lasote/stable --all
     
 ## Reuse the packages
 
 ### Basic setup
 
-    $ conan install libcurl/7.49.1@lasote/stable
+    $ conan install libcurl/7.50.3@lasote/stable
     
 ### Project setup
 
 If you handle multiple dependencies in your project is better to add a *conanfile.txt*
     
     [requires]
-    libcurl/7.49.1@lasote/stable
+    libcurl/7.50.3@lasote/stable
 
     [options]
     libcurl:shared=true # false
