@@ -126,9 +126,10 @@ CONAN_BASIC_SETUP()
             replace_in_file("%s/src/CMakeLists.txt" % self.ZIP_FOLDER_NAME, "install(TARGETS ${EXE_NAME} DESTINATION bin)", "ENDIF()") # EOF
             cmake = CMake(self.settings)
             static = "-DBUILD_SHARED_LIBS=ON -DCURL_STATICLIB=OFF" if self.options.shared else "-DBUILD_SHARED_LIBS=OFF -DCURL_STATICLIB=ON"
+            ldap = "-DCURL_DISABLE_LDAP=ON" if not self.options.with_ldap else "-DCURL_DISABLE_LDAP=OFF"
             self.run("cd %s && mkdir _build" % self.ZIP_FOLDER_NAME)
             cd_build = "cd %s/_build" % self.ZIP_FOLDER_NAME
-            self.run('%s && cmake .. %s -DBUILD_TESTING=OFF %s' % (cd_build, cmake.command_line, static))
+            self.run('%s && cmake .. %s -DBUILD_TESTING=OFF %s %s' % (cd_build, cmake.command_line, ldap, static))
             self.run("%s && cmake --build . %s" % (cd_build, cmake.build_config))
             
     def package(self):
