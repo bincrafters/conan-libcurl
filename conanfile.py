@@ -181,6 +181,8 @@ CONAN_BASIC_SETUP()
         else:
             self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
             self.cpp_info.libs.append('Ws2_32')
+            if self.options.with_ldap:
+                self.cpp_info.libs.append("wldap32")
         
         if not self.options.shared:
             self.cpp_info.defines.append("CURL_STATICLIB=1")
