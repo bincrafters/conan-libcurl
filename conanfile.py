@@ -28,6 +28,7 @@ class LibCurlConan(ConanFile):
     exports = ["CMakeLists.txt", "FindCURL.cmake"]
     url="http://github.com/lasote/conan-libcurl"
     license="https://curl.haxx.se/docs/copyright.html"
+    short_paths=True
     
     def config(self):
         del self.settings.compiler.libcxx
@@ -126,7 +127,7 @@ CONAN_BASIC_SETUP()
             static = "-DBUILD_SHARED_LIBS=ON -DCURL_STATICLIB=OFF" if self.options.shared else "-DBUILD_SHARED_LIBS=OFF -DCURL_STATICLIB=ON"
             self.run("cd %s && mkdir _build" % self.ZIP_FOLDER_NAME)
             cd_build = "cd %s/_build" % self.ZIP_FOLDER_NAME
-            self.run('%s && cmake .. %s %s' % (cd_build, cmake.command_line, static))
+            self.run('%s && cmake .. %s -DBUILD_TESTING=OFF %s' % (cd_build, cmake.command_line, static))
             self.run("%s && cmake --build . %s" % (cd_build, cmake.build_config))
             
     def package(self):
