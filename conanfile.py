@@ -28,7 +28,7 @@ class LibCurlConan(ConanFile):
                       "with_libmetalink=False", \
                       "with_largemaxwritesize=False"
     exports = ["CMakeLists.txt", "FindCURL.cmake"]
-    url="http://github.com/lasote/conan-libcurl"
+    url="http://github.com/theirix/conan-libcurl"
     license="https://curl.haxx.se/docs/copyright.html"
     short_paths=True
     
