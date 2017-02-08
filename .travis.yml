@@ -6,7 +6,7 @@ language: python
 env:
   global:
     - CONAN_UPLOAD=1
-    - CONAN_REFERENCE="libcurl/7.50.3"
+    - CONAN_REFERENCE="libcurl/7.52.1"
     - CONAN_USERNAME="lasote"
     - CONAN_CHANNEL="ci"
     - CONAN_TOTAL_PAGES=1
