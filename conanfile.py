@@ -45,7 +45,7 @@ class LibCurlConan(ConanFile):
             del self.requires["OpenSSL"]
         if self.options.with_libssh2:
             if self.settings.os != "Windows":
-                self.requires.add("libssh2/[~=1.8]@theirix/testing", private=False)
+                self.requires.add("libssh2/[~=1.8]@theirix/stable", private=False)
                 self.options["libssh2"].shared = self.options.shared
             
         if self.settings.os != "Macos":
