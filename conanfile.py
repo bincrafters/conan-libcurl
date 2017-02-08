@@ -37,22 +37,23 @@ class LibCurlConan(ConanFile):
         del self.settings.compiler.libcxx
         if self.options.with_openssl:
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
-                self.requires.add("OpenSSL/[>=1.0.2a,<1.0.3]@lasote/stable", private=False)
+                self.requires.add("OpenSSL/[>1.0.2a,<1.0.3]@lasote/stable", private=False)
                 self.options["OpenSSL"].shared = self.options.shared
             elif self.settings.os == "Macos" and self.options.darwin_ssl:
-                self.requires.add("zlib/[>=1.2.8,<1.3.0]@lasote/stable", private=False)
+                self.requires.add("zlib/[~=1.2]@lasote/stable", private=False)
         else:
             del self.requires["OpenSSL"]
         if self.options.with_libssh2:
             if self.settings.os != "Windows":
-                self.requires.add("libssh2/[>=1.8.0,<1.9.0]@theirix/stable", private=False)
+                self.requires.add("libssh2/[~=1.8]@theirix/testing", private=False)
+                self.options["libssh2"].shared = self.options.shared
             
         if self.settings.os != "Macos":
             try:
                 self.options.remove("darwin_ssl")
             except:
                 pass
-        self.requires.add("zlib/[>=1.2.8,<1.3.0]@lasote/stable", private=False)
+        self.requires.add("zlib/[~=1.2]@lasote/stable", private=False)
 
     def source(self):
         zip_name = "curl-%s.tar.gz" % self.version
