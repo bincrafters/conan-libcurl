@@ -20,11 +20,13 @@ class LibCurlConan(ConanFile):
                "with_libssh2": [True, False],
                "with_libidn": [True, False], 
                "with_librtmp": [True, False],
-               "with_libmetalink": [True, False]}
+               "with_libmetalink": [True, False],
+               "with_largemaxwritesize": [True, False]}
     default_options = "shared=False", "with_openssl=True", "disable_threads=False", \
                       "with_ldap=False", "custom_cacert=False", "darwin_ssl=True",  \
                       "with_libssh2=False", "with_libidn=False", "with_librtmp=False", \
-                      "with_libmetalink=False"
+                      "with_libmetalink=False", \
+                      "with_largemaxwritesize=False"
     exports = ["CMakeLists.txt", "FindCURL.cmake"]
     url="http://github.com/lasote/conan-libcurl"
     license="https://curl.haxx.se/docs/copyright.html"
@@ -57,6 +59,9 @@ class LibCurlConan(ConanFile):
         unzip(zip_name)
         os.unlink(zip_name)
         download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem", verify=False)
+        if self.options.with_largemaxwritesize:
+            self.output.warn("Setting large MAX_WRITE_SIZE")
+            replace_in_file("%s/include/curl/curl.h" % self.ZIP_FOLDER_NAME, "define CURL_MAX_WRITE_SIZE 16384", "define CURL_MAX_WRITE_SIZE 10485760")
         if self.settings.os != "Windows":
             self.run("chmod +x ./%s/configure" % self.ZIP_FOLDER_NAME)
 
