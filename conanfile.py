@@ -30,6 +30,7 @@ class LibCurlConan(ConanFile):
     exports = ["CMakeLists.txt", "FindCURL.cmake"]
     url="http://github.com/theirix/conan-libcurl"
     license="https://curl.haxx.se/docs/copyright.html"
+    description = "command line tool and library for transferring data with URLs"
     short_paths=True
     
     def config(self):
