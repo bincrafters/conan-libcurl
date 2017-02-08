@@ -40,6 +40,9 @@ class LibCurlConan(ConanFile):
                 self.requires.add("zlib/1.2.8@lasote/stable", private=False)
         else:
             del self.requires["OpenSSL"]
+        if self.options.with_libssh2:
+            if self.settings.os != "Windows":
+                self.requires.add("libssh2/1.8.0@theirix/stable", private=False)
             
         if self.settings.os != "Macos":
             try:
@@ -67,7 +70,6 @@ class LibCurlConan(ConanFile):
             
 
             suffix = " --without-libidn " if not self.options.with_libidn else "--with-libidn"
-            suffix += " --without-libssh2 " if not self.options.with_libssh2 else "--with-libssh2"
             suffix += " --without-librtmp " if not self.options.with_librtmp else "--with-librtmp"
             suffix += " --without-libmetalink " if not self.options.with_libmetalink else "--with-libmetalink"
             
@@ -78,6 +80,11 @@ class LibCurlConan(ConanFile):
                     suffix += "--with-ssl "
             else:
                 suffix += "--without-ssl "
+
+            if self.options.with_libssh2:
+                suffix += "--with-libssh2=%s " % self.deps_cpp_info["libssh2"].lib_paths[0]
+            else:
+                suffix += " --without-libssh2 "
                 
             suffix += "--with-zlib=%s " % self.deps_cpp_info["zlib"].lib_paths[0]
             
