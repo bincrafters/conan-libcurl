@@ -33,19 +33,13 @@ class LibCurlConan(ConanFile):
     description = "command line tool and library for transferring data with URLs"
     short_paths=True
     
-    def config(self):
+    def config_options(self):
         del self.settings.compiler.libcxx
         if self.options.with_openssl:
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
-                self.requires.add("OpenSSL/[>1.0.2a,<1.0.3]@lasote/stable", private=False)
                 self.options["OpenSSL"].shared = self.options.shared
-            elif self.settings.os == "Macos" and self.options.darwin_ssl:
-                self.requires.add("zlib/[~=1.2]@lasote/stable", private=False)
-        else:
-            del self.requires["OpenSSL"]
         if self.options.with_libssh2:
             if self.settings.os != "Windows":
-                self.requires.add("libssh2/[~=1.8]@theirix/stable", private=False)
                 self.options["libssh2"].shared = self.options.shared
             
         if self.settings.os != "Macos":
@@ -53,6 +47,19 @@ class LibCurlConan(ConanFile):
                 self.options.remove("darwin_ssl")
             except:
                 pass
+
+    def requirements(self):
+        if self.options.with_openssl:
+            if self.settings.os != "Macos" or not self.options.darwin_ssl:
+                self.requires.add("OpenSSL/[>1.0.2a,<1.0.3]@lasote/stable", private=False)
+            elif self.settings.os == "Macos" and self.options.darwin_ssl:
+                self.requires.add("zlib/[~=1.2]@lasote/stable", private=False)
+        else:
+            del self.requires["OpenSSL"]
+        if self.options.with_libssh2:
+            if self.settings.os != "Windows":
+                self.requires.add("libssh2/[~=1.8]@theirix/stable", private=False)
+
         self.requires.add("zlib/[~=1.2]@lasote/stable", private=False)
 
     def source(self):
