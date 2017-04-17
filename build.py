@@ -6,15 +6,15 @@ if __name__ == "__main__":
     builder.add_common_builds(pure_c=True, shared_option_name="libcurl:shared")
     accepted_builds = []
     if platform.system() == "Linux": 
-        for build in builder.builds:
-            if build[0]["arch"] != "x86":
-                accepted_builds.append([build[0], build[1]])
+        for settings, options in builder.builds:
+            if settings["arch"] != "x86":
+                accepted_builds.append([settings, dict(options.items() + [('OpenSSL:no_electric_fence', True)])])
         builder.builds = accepted_builds
 
     if platform.system() == "Darwin": 
-        for build in builder.builds:
-            if not build[0]["arch"] == "x86":
-                accepted_builds.append([build[0], build[1]])
+        for settings, options in builder.builds:
+            if not settings["arch"] == "x86":
+                accepted_builds.append([settings, dict(options.items() + [('OpenSSL:no_electric_fence', True)])])
 
         builder.builds = accepted_builds
         for compiler in builder.apple_clang_versions:
