@@ -133,7 +133,13 @@ class LibCurlConan(ConanFile):
 
                 self.output.warn(configure)
                 self.run(configure)
-                self.run("cd %s && make" % (self.ZIP_FOLDER_NAME))
+
+                if self.settings.os == "Macos":
+                    make_suffix = "CFLAGS=-Wno-unguarded-availability"
+                else:
+                    make_suffix = ''
+
+                self.run("cd %s && make %s" % (self.ZIP_FOLDER_NAME, make_suffix))
            
         else:
             # Do not compile curl tool, just library
