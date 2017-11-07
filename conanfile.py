@@ -174,7 +174,7 @@ CONAN_BASIC_SETUP()
                 self.copy(pattern="*.a", dst="lib", src=self.name, keep_path=False, links=True)
 
     def package_info(self):
-        if self.setting.os != "Windows":
+        if self.settings.os != "Windows":
             self.cpp_info.libs = ['curl']
             if self.settings.os == "Linux":
                 self.cpp_info.libs.extend(["rt"])
