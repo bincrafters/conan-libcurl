@@ -106,7 +106,7 @@ class LibcurlConan(ConanFile):
                 if 'efence' in env_build.libs:
                     env_build.libs.remove('efence')
 
-                old_str = "-install_name \$rpath/"
+                old_str = "-install_name \\$rpath/"
                 new_str = "-install_name "
                 tools.replace_in_file("%s/configure" % self.name, old_str, new_str)
 
@@ -179,11 +179,11 @@ CONAN_BASIC_SETUP()
             if self.settings.os == "Linux":
                 self.cpp_info.libs.extend(["rt"])
                 if self.options.with_libssh2:
-                   self.cpp_info.libs.extend(["ssh2"]) 
+                    self.cpp_info.libs.extend(["ssh2"])
                 if self.options.with_libidn:
-                   self.cpp_info.libs.extend(["idn"]) 
+                    self.cpp_info.libs.extend(["idn"])
                 if self.options.with_librtmp:
-                    self.cpp_info.libs.extend(["rtmp"]) 
+                    self.cpp_info.libs.extend(["rtmp"])
             if self.settings.os == "Macos":
                 if self.options.with_ldap:
                     self.cpp_info.libs.extend(["ldap"])
