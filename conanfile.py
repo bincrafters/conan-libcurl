@@ -112,6 +112,7 @@ class LibcurlConan(ConanFile):
                 self.output.warn(configure)
                 self.run(configure)
 
+                # temporary fix for xcode9
                 if self.settings.os == "Macos":
                     make_suffix = "CFLAGS=-Wno-unguarded-availability"
                 else:
