@@ -47,8 +47,6 @@ class LibcurlConan(ConanFile):
                 self.requires.add("OpenSSL/[>1.0.2a,<1.0.3]@conan/stable", private=False)
             elif self.settings.os == "Macos" and self.options.darwin_ssl:
                 self.requires.add("zlib/[~=1.2]@conan/stable", private=False)
-        else:
-            del self.requires["OpenSSL"]
         if self.options.with_libssh2:
             if self.settings.os != "Windows":
                 self.requires.add("libssh2/[~=1.8]@bincrafters/stable", private=False)
