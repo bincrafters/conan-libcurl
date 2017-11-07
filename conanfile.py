@@ -113,8 +113,9 @@ class LibcurlConan(ConanFile):
                 self.run(configure)
 
                 # temporary fix for xcode9
+                # extremely fragile because make doesn't see CFLAGS from env, only from cmdline
                 if self.settings.os == "Macos":
-                    make_suffix = "CFLAGS=-Wno-unguarded-availability"
+                    make_suffix = "CFLAGS=\"-Wno-unguarded-availability " + env_build.vars['CFLAGS'] + "\""
                 else:
                     make_suffix = ''
 
