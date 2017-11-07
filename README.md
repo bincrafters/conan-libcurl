@@ -48,5 +48,9 @@ The following command both runs all the steps of the conan file, and publishes t
 
     $ conan upload libcurl/7.52.1@bincrafters/stable --all -r bincrafters
 	
-### License
-[LICENSE_TYPE](https://github.com/someauthor/libcurl/blob/master/LICENSE)
+## License
+[Curl License](https://curl.haxx.se/docs/copyright.html)
+
+## Credits
+
+Package is inherited from original lasote/conan-libcurl recipe with modifications from theirix/conan-libcurl.
