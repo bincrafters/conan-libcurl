@@ -1,48 +1,52 @@
-[![Build Status](https://travis-ci.org/theirix/conan-libcurl.svg)](https://travis-ci.org/theirix/conan-libcurl)
+[ ![Download](https://api.bintray.com/packages/bincrafters/public-conan/libcurl%3Abincrafters/images/download.svg?version=7.52.1%3Astable) ](https://bintray.com/bincrafters/public-conan/libcurl%3Abincrafters/7.52.1%3Astable/link)
+[![Build Status](https://travis-ci.org/bincrafters/conan-libcurl.svg?branch=stable%2F7.52.1)](https://travis-ci.org/bincrafters/conan-libcurl)
+[![Build status](https://ci.appveyor.com/api/projects/status/47mw0498j5ine6vv/branch/stable/7.52.1?svg=true)](https://ci.appveyor.com/project/BinCrafters/conan-libcurl/branch/stable/7.52.1)
 
+Brief statement describing libcurl
 
-# conan-libcurl
+[Conan.io](https://conan.io) package for [libcurl](https://libcurl.org) project
 
-[Conan.io](https://conan.io) package for lib cURL library
+The packages generated with this **conanfile** can be found in [Bintray](https://bintray.com/bincrafters/public-conan/libcurl%3Abincrafters).
 
-The packages generated with this **conanfile** can be found in [conan.io](https://conan.io/source/libcurl/7.52.1/theirix/stable).
-
-## Build packages
-
-Download conan client from [Conan.io](https://conan.io) and run:
-
-    $ python build.py
-
-## Upload packages to server
-
-    $ conan upload libcurl/7.52.1@theirix/stable --all
-    
-## Reuse the packages
+## For Users: Use this package
 
 ### Basic setup
 
-    $ conan install libcurl/7.52.1@theirix/stable
-    
+    $ conan install libcurl/7.52.1@bincrafters/stable
+	
 ### Project setup
 
 If you handle multiple dependencies in your project is better to add a *conanfile.txt*
-    
-    [requires]
-    libcurl/7.52.1@theirix/stable
 
-    [options]
-    libcurl:shared=true # false
-    
+    [requires]
+    libcurl/7.52.1@bincrafters/stable
+
     [generators]
     txt
-    cmake
 
-    [imports]
-    ., cacert.pem -> ./bin
+Complete the installation of requirements for your project running:
 
-Complete the installation of requirements for your project running:</small></span>
+    $ mkdir build && cd build && conan install ..
+	
+Note: It is recommended that you run conan install from a build directory and not the root of the project directory.  This is because conan generates *conanbuildinfo* files specific to a single build configuration which by default comes from an autodetected default profile located in ~/.conan/profiles/default .  If you pass different build configuration options to conan install, it will generate different *conanbuildinfo* files.  Thus, they should not be added to the root of the project, nor committed to git.
 
-    conan install . 
+## For Packagers: Publish this Package
 
-Project setup installs the library (and all his dependencies) and generates the files *conanbuildinfo.txt* and *conanbuildinfo.cmake* with all the paths and variables that you need to link with your dependencies.
+The example below shows the commands used to publish to bincrafters conan repository. To publish to your own conan respository (for example, after forking this git repository), you will need to change the commands below accordingly.
 
+## Build and package 
+
+The following command both runs all the steps of the conan file, and publishes the package to the local system cache.  This includes downloading dependencies from "build_requires" and "requires" , and then running the build() method. 
+
+    $ conan create bincrafters/stable
+
+## Add Remote
+
+	$ conan remote add bincrafters "https://api.bintray.com/conan/bincrafters/public-conan"
+
+## Upload
+
+    $ conan upload libcurl/7.52.1@bincrafters/stable --all -r bincrafters
+	
+### License
+[LICENSE_TYPE](https://github.com/someauthor/libcurl/blob/master/LICENSE)
