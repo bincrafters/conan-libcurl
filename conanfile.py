@@ -101,11 +101,6 @@ class LibcurlConan(ConanFile):
             env_build = AutoToolsBuildEnvironment(self)
             with tools.environment_append(env_build.vars):
 
-                # Hack for configure, don't know why fails because it's not able to find libefence.so
-                # TODO better to remove it from depends
-                if 'efence' in env_build.libs:
-                    env_build.libs.remove('efence')
-
                 old_str = "-install_name \\$rpath/"
                 new_str = "-install_name "
                 tools.replace_in_file("%s/configure" % self.name, old_str, new_str)
