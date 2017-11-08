@@ -1,5 +1,5 @@
 from conan.packager import ConanMultiPackager
-import os, re, platform
+import os, re, platform, copy
 
 
 def get_value_from_recipe(search_string):
@@ -56,5 +56,15 @@ if __name__ == "__main__":
         stable_branch_pattern="stable/*")
         
     builder.add_common_builds(shared_option_name="%s:shared" % name, pure_c=True)
-    # TODO add builds with darwin_ssl=False on macOS to actually test openssl
+
+    # add macos builds with openssl too
+    builds = []
+    for settings, options, env_vars, build_requires in builder.builds:
+        builds.append([settings, options, env_vars, build_requires])
+        if settings["compiler"] == "apple-clang":
+            new_options = copy.copy(options)
+            new_options["libcurl:darwin_ssl"] = False
+            builds.append([settings, new_options, env_vars, build_requires])
+    builder.builds = builds
+
     builder.run()
