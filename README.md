@@ -1,6 +1,6 @@
 [ ![Download](https://api.bintray.com/packages/bincrafters/public-conan/libcurl%3Abincrafters/images/download.svg?version=7.52.1%3Astable) ](https://bintray.com/bincrafters/public-conan/libcurl%3Abincrafters/7.52.1%3Astable/link)
 [![Build Status](https://travis-ci.org/bincrafters/conan-libcurl.svg?branch=stable%2F7.52.1)](https://travis-ci.org/bincrafters/conan-libcurl)
-[![Build status](https://ci.appveyor.com/api/projects/status/47mw0498j5ine6vv/branch/stable/7.52.1?svg=true)](https://ci.appveyor.com/project/BinCrafters/conan-libcurl/branch/stable/7.52.1)
+[![Build status](https://ci.appveyor.com/api/projects/status/t9we1v55dmd6jm4k/branch/stable/7.52.1?svg=true)](https://ci.appveyor.com/project/BinCrafters/conan-libcurl/branch/stable/7.52.1)
 
 Brief statement describing libcurl
 
