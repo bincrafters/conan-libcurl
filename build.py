@@ -61,7 +61,7 @@ if __name__ == "__main__":
     builds = []
     for settings, options, env_vars, build_requires in builder.builds:
         builds.append([settings, options, env_vars, build_requires])
-        if settings["compiler"] == "apple-clang":
+        if settings["compiler"] == "apple-clang" and settings["build_type"] == "Release":
             new_options = copy.copy(options)
             new_options["libcurl:darwin_ssl"] = False
             builds.append([settings, new_options, env_vars, build_requires])
