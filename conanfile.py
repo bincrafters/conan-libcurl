@@ -1,5 +1,9 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from conans import ConanFile, AutoToolsBuildEnvironment, CMake, tools
 import os
+
 
 class LibcurlConan(ConanFile):
     name = "libcurl"
@@ -7,13 +11,13 @@ class LibcurlConan(ConanFile):
     generators = "cmake", "txt"
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False], # SHARED IN LINUX IS HAVING PROBLEMS WITH LIBEFENCE
-               "with_openssl": [True, False], 
+               "with_openssl": [True, False],
                "disable_threads": [True, False],
-               "with_ldap": [True, False], 
+               "with_ldap": [True, False],
                "custom_cacert": [True, False],
                "darwin_ssl": [True, False],
                "with_libssh2": [True, False],
-               "with_libidn": [True, False], 
+               "with_libidn": [True, False],
                "with_librtmp": [True, False],
                "with_libmetalink": [True, False]}
     default_options = "shared=False", "with_openssl=True", "disable_threads=False", \
@@ -21,11 +25,11 @@ class LibcurlConan(ConanFile):
                       "with_libssh2=False", "with_libidn=False", "with_librtmp=False", \
                       "with_libmetalink=False"
     exports = ["CMakeLists.txt", "FindCURL.cmake"]
-    url="http://github.com/bincrafters/conan-libcurl"
-    license="https://curl.haxx.se/docs/copyright.html"
+    url = "http://github.com/bincrafters/conan-libcurl"
+    license = "https://curl.haxx.se/docs/copyright.html"
     description = "command line tool and library for transferring data with URLs"
-    short_paths=True
-    
+    short_paths = True
+
     def config_options(self):
         del self.settings.compiler.libcxx
         if self.options.with_openssl:
@@ -34,7 +38,7 @@ class LibcurlConan(ConanFile):
         if self.options.with_libssh2:
             if self.settings.os != "Windows":
                 self.options["libssh2"].shared = self.options.shared
-            
+
         if self.settings.os != "Macos":
             try:
                 self.options.remove("darwin_ssl")
@@ -55,19 +59,18 @@ class LibcurlConan(ConanFile):
 
     def source(self):
         tools.get("https://curl.haxx.se/download/curl-%s.tar.gz" % self.version)
-        os.rename("curl-%s" % (self.version), self.name)
+        os.rename("curl-%s" % self.version, self.name)
         tools.download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem", verify=False)
         if self.settings.os != "Windows":
             self.run("chmod +x ./%s/configure" % self.name)
 
     def build(self):
         if self.settings.os == "Linux" or self.settings.os == "Macos":
-            
 
             suffix = " --without-libidn " if not self.options.with_libidn else "--with-libidn"
             suffix += " --without-librtmp " if not self.options.with_librtmp else "--with-librtmp"
             suffix += " --without-libmetalink " if not self.options.with_libmetalink else "--with-libmetalink"
-            
+
             if self.options.with_openssl:
                 if self.settings.os == "Macos" and self.options.darwin_ssl:
                     suffix += "--with-darwinssl "
@@ -80,21 +83,20 @@ class LibcurlConan(ConanFile):
                 suffix += "--with-libssh2=%s " % self.deps_cpp_info["libssh2"].lib_paths[0]
             else:
                 suffix += " --without-libssh2 "
-                
+
             suffix += "--with-zlib=%s " % self.deps_cpp_info["zlib"].lib_paths[0]
-            
+
             if not self.options.shared:
-                suffix += " --disable-shared" 
-            
+                suffix += " --disable-shared"
+
             if self.options.disable_threads:
                 suffix += " --disable-thread"
 
             if not self.options.with_ldap:
                 suffix += " --disable-ldap"
-        
+
             if self.options.custom_cacert:
                 suffix += ' --with-ca-bundle=cacert.pem'
-            
 
             env_build = AutoToolsBuildEnvironment(self)
             with tools.environment_append(env_build.vars):
@@ -120,7 +122,6 @@ class LibcurlConan(ConanFile):
                     make_suffix = ''
 
                 self.run("cd %s && make %s" % (self.name, make_suffix))
-           
         else:
             # Do not compile curl tool, just library
             conan_magic_lines = '''project(CURL)
@@ -131,7 +132,7 @@ CONAN_BASIC_SETUP()
             tools.replace_in_file("%s/CMakeLists.txt" % self.name, "cmake_minimum_required(VERSION 2.8 FATAL_ERROR)", conan_magic_lines)
             tools.replace_in_file("%s/CMakeLists.txt" % self.name, "project( CURL C )", "")
             tools.replace_in_file("%s/CMakeLists.txt" % self.name, "include(CurlSymbolHiding)", "")
-            
+
             tools.replace_in_file("%s/src/CMakeLists.txt" % self.name, "add_executable(", "IF(0)\n add_executable(")
             tools.replace_in_file("%s/src/CMakeLists.txt" % self.name, "install(TARGETS ${EXE_NAME} DESTINATION bin)", "ENDIF()") # EOF
             cmake = CMake(self.settings)
@@ -141,19 +142,19 @@ CONAN_BASIC_SETUP()
             cd_build = "cd %s/_build" % self.name
             self.run('%s && cmake .. %s -DBUILD_TESTING=OFF %s %s' % (cd_build, cmake.command_line, ldap, static))
             self.run("%s && cmake --build . %s" % (cd_build, cmake.build_config))
-            
+
     def package(self):
         self.copy(pattern="LICENSE")
-        
+
         # Copy findZLIB.cmake to package
         self.copy("FindCURL.cmake", ".", ".")
-        
+
         # Copying zlib.h, zutil.h, zconf.h
-        self.copy("*.h", "include/curl", "%s" % (self.name), keep_path=False)
+        self.copy("*.h", "include/curl", "%s" % self.name, keep_path=False)
 
         # Copy the certs to be used by client
         self.copy(pattern="cacert.pem", keep_path=False)
-        
+
         # Copying static and dynamic libs
         if self.settings.os == "Windows":
             if self.options.shared:
@@ -186,12 +187,12 @@ CONAN_BASIC_SETUP()
                     # self.cpp_info.libs.extend(["/System/Library/Frameworks/Cocoa.framework", "/System/Library/Frameworks/Security.framework"])
                     self.cpp_info.exelinkflags.append("-framework Cocoa")
                     self.cpp_info.exelinkflags.append("-framework Security")
-                    self.cpp_info.sharedlinkflags = self.cpp_info.exelinkflags    
+                    self.cpp_info.sharedlinkflags = self.cpp_info.exelinkflags
         else:
             self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
             self.cpp_info.libs.append('Ws2_32')
             if self.options.with_ldap:
                 self.cpp_info.libs.append("wldap32")
-        
+
         if not self.options.shared:
             self.cpp_info.defines.append("CURL_STATICLIB=1")
