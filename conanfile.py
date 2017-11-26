@@ -136,14 +136,15 @@ CONAN_BASIC_SETUP()
             tools.replace_in_file("%s/src/CMakeLists.txt" % self.name, "add_executable(", "IF(0)\n add_executable(")
             tools.replace_in_file("%s/src/CMakeLists.txt" % self.name, "install(TARGETS ${EXE_NAME} DESTINATION bin)", "ENDIF()") # EOF
 
-            tools.mkdir("%s\\_build" % self.name)
+            tools.mkdir(os.path.join(self.name, '_build'))
 
             cmake = CMake(self)
             cmake.definitions['BUILD_TESTING'] = False
             cmake.definitions['CURL_DISABLE_LDAP'] = not self.options.with_ldap
             cmake.definitions['BUILD_SHARED_LIBS'] = self.options.shared
             cmake.definitions['CURL_STATICLIB'] = not self.options.shared
-            cmake.configure(source_dir=self.name, build_dir='_build')
+            cmake.configure(source_dir=os.path.join(self.conanfile_directory, self.name),
+                            build_dir=os.path.join(self.conanfile_directory, self.name, '_build'))
             cmake.build()
 
     def package(self):
