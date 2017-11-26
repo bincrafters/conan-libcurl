@@ -136,7 +136,7 @@ CONAN_BASIC_SETUP()
             tools.replace_in_file("%s/src/CMakeLists.txt" % self.name, "add_executable(", "IF(0)\n add_executable(")
             tools.replace_in_file("%s/src/CMakeLists.txt" % self.name, "install(TARGETS ${EXE_NAME} DESTINATION bin)", "ENDIF()") # EOF
 
-            self.run("mkdir %s/_build" % self.name)
+            tools.mkdir("%s\\_build" % self.name)
 
             cmake = CMake(self)
             cmake.definitions['BUILD_TESTING'] = False
