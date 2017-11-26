@@ -70,6 +70,8 @@ class LibcurlConan(ConanFile):
             tools.replace_in_file(os.path.join(self.name, 'include', 'curl', 'curl.h'),
                                   "define CURL_MAX_WRITE_SIZE 16384", "define CURL_MAX_WRITE_SIZE 10485760")
 
+        tools.replace_in_file('FindCURL.cmake', 'set(CURL_VERSION_STRING "0")', 'set(CURL_VERSION_STRING "%s")' % self.version, strict=True)
+
         if self.settings.os == "Linux" or self.settings.os == "Macos":
 
             suffix = " --without-libidn " if not self.options.with_libidn else "--with-libidn"
