@@ -135,13 +135,16 @@ CONAN_BASIC_SETUP()
 
             tools.replace_in_file("%s/src/CMakeLists.txt" % self.name, "add_executable(", "IF(0)\n add_executable(")
             tools.replace_in_file("%s/src/CMakeLists.txt" % self.name, "install(TARGETS ${EXE_NAME} DESTINATION bin)", "ENDIF()") # EOF
-            cmake = CMake(self.settings)
-            static = "-DBUILD_SHARED_LIBS=ON -DCURL_STATICLIB=OFF" if self.options.shared else "-DBUILD_SHARED_LIBS=OFF -DCURL_STATICLIB=ON"
-            ldap = "-DCURL_DISABLE_LDAP=ON" if not self.options.with_ldap else "-DCURL_DISABLE_LDAP=OFF"
-            self.run("cd %s && mkdir _build" % self.name)
-            cd_build = "cd %s/_build" % self.name
-            self.run('%s && cmake .. %s -DBUILD_TESTING=OFF %s %s' % (cd_build, cmake.command_line, ldap, static))
-            self.run("%s && cmake --build . %s" % (cd_build, cmake.build_config))
+
+            self.run("mkdir %s/_build" % self.name)
+
+            cmake = CMake(self)
+            cmake.definitions['BUILD_TESTING'] = False
+            cmake.definitions['CURL_DISABLE_LDAP'] = not self.options.with_ldap
+            cmake.definitions['BUILD_SHARED_LIBS'] = self.options.shared
+            cmake.definitions['CURL_STATICLIB'] = not self.options.shared
+            cmake.configure(source_dir=self.name, build_dir='_build')
+            cmake.build()
 
     def package(self):
         self.copy(pattern="LICENSE")
