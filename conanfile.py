@@ -24,7 +24,7 @@ class LibcurlConan(ConanFile):
                       "with_ldap=False", "custom_cacert=False", "darwin_ssl=True",  \
                       "with_libssh2=False", "with_libidn=False", "with_librtmp=False", \
                       "with_libmetalink=False"
-    exports = ["CMakeLists.txt", "FindCURL.cmake"]
+    exports = ["FindCURL.cmake"]
     url = "http://github.com/bincrafters/conan-libcurl"
     license = "https://curl.haxx.se/docs/copyright.html"
     description = "command line tool and library for transferring data with URLs"
