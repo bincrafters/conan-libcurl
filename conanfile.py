@@ -116,7 +116,9 @@ class LibcurlConan(ConanFile):
                 self.output.warn(configure)
 
                 # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
-                tools.replace_in_file("%s/configure" % self.name, 'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"', 'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"')
+                # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
+                # so just ignore it if not matched
+                tools.replace_in_file("%s/configure" % self.name, 'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"', 'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"', strict=False)
 
                 self.output.warn(configure)
                 self.run(configure)
