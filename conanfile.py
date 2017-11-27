@@ -186,7 +186,7 @@ CONAN_BASIC_SETUP()
         if self.settings.os != "Windows":
             self.cpp_info.libs = ['curl']
             if self.settings.os == "Linux":
-                self.cpp_info.libs.extend(["rt"])
+                self.cpp_info.libs.extend(["rt", "pthread"])
                 if self.options.with_libssh2:
                     self.cpp_info.libs.extend(["ssh2"])
                 if self.options.with_libidn:
