@@ -152,6 +152,7 @@ CONAN_BASIC_SETUP()
             cmake.definitions['CURL_DISABLE_LDAP'] = not self.options.with_ldap
             cmake.definitions['BUILD_SHARED_LIBS'] = self.options.shared
             cmake.definitions['CURL_STATICLIB'] = not self.options.shared
+            cmake.definitions['CMAKE_DEBUG_POSTFIX'] = ''
             cmake.configure(source_dir=os.path.join(self.conanfile_directory, self.name),
                             build_dir=os.path.join(self.conanfile_directory, self.name, '_build'))
             cmake.build()
