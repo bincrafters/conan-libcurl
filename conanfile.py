@@ -73,7 +73,7 @@ class LibcurlConan(ConanFile):
         tools.replace_in_file('FindCURL.cmake', 'set(CURL_VERSION_STRING "0")', 'set(CURL_VERSION_STRING "%s")' % self.version, strict=True)
  
         # temporary workaround for DEBUG_POSTFIX (curl issues #1796, #2121)
-        tools.replace_in_file(os.path.joun('lib', 'CMakeLists.txt'), '  DEBUG_POSTFIX "-d"', '  DEBUG_POSTFIX ""', strict=False)
+        tools.replace_in_file(os.path.join(self.name, 'lib', 'CMakeLists.txt'), '  DEBUG_POSTFIX "-d"', '  DEBUG_POSTFIX ""', strict=False)
 
         if self.settings.os == "Linux" or self.settings.os == "Macos":
 
