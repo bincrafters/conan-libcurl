@@ -20,11 +20,13 @@ class LibcurlConan(ConanFile):
                "with_libidn": [True, False],
                "with_librtmp": [True, False],
                "with_libmetalink": [True, False],
-               "with_largemaxwritesize": [True, False]}
+               "with_largemaxwritesize": [True, False],
+               "with_nghttp2": [True, False]}
     default_options = "shared=False", "with_openssl=True", "disable_threads=False", \
                       "with_ldap=False", "custom_cacert=False", "darwin_ssl=True",  \
                       "with_libssh2=False", "with_libidn=False", "with_librtmp=False", \
-                      "with_libmetalink=False", "with_largemaxwritesize=False"
+                      "with_libmetalink=False", "with_largemaxwritesize=False", \
+                      "with_nghttp2=False"
     exports = ["FindCURL.cmake"]
     url = "http://github.com/bincrafters/conan-libcurl"
     license = "https://curl.haxx.se/docs/copyright.html"
@@ -77,9 +79,10 @@ class LibcurlConan(ConanFile):
 
         if self.settings.os == "Linux" or self.settings.os == "Macos":
 
-            suffix = " --without-libidn " if not self.options.with_libidn else "--with-libidn"
-            suffix += " --without-librtmp " if not self.options.with_librtmp else "--with-librtmp"
-            suffix += " --without-libmetalink " if not self.options.with_libmetalink else "--with-libmetalink"
+            suffix = " --without-libidn " if not self.options.with_libidn else " --with-libidn "
+            suffix += " --without-librtmp " if not self.options.with_librtmp else " --with-librtmp "
+            suffix += " --without-libmetalink " if not self.options.with_libmetalink else " --with-libmetalink "
+            suffix += " --without-nghttp2 " if not self.options.with_nghttp2 else " --with-nghttp2 "
 
             if self.options.with_openssl:
                 if self.settings.os == "Macos" and self.options.darwin_ssl:
