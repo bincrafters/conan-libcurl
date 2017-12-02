@@ -1,6 +1,6 @@
-[ ![Download](https://api.bintray.com/packages/bincrafters/public-conan/libcurl%3Abincrafters/images/download.svg?version=7.56.1%3Astable) ](https://bintray.com/bincrafters/public-conan/libcurl%3Abincrafters/7.56.1%3Astable/link)
-[![Build Status](https://travis-ci.org/bincrafters/conan-libcurl.svg?branch=stable%2F7.56.1)](https://travis-ci.org/bincrafters/conan-libcurl)
-[![Build status](https://ci.appveyor.com/api/projects/status/t9we1v55dmd6jm4k/branch/stable/7.56.1?svg=true)](https://ci.appveyor.com/project/BinCrafters/conan-libcurl/branch/stable/7.56.1)
+[ ![Download](https://api.bintray.com/packages/bincrafters/public-conan/libcurl%3Abincrafters/images/download.svg?version=7.52.1%3Astable) ](https://bintray.com/bincrafters/public-conan/libcurl%3Abincrafters/7.52.1%3Astable/link)
+[![Build Status](https://travis-ci.org/bincrafters/conan-libcurl.svg?branch=stable%2F7.52.1)](https://travis-ci.org/bincrafters/conan-libcurl)
+[![Build status](https://ci.appveyor.com/api/projects/status/t9we1v55dmd6jm4k/branch/stable/7.52.1?svg=true)](https://ci.appveyor.com/project/BinCrafters/conan-libcurl/branch/stable/7.52.1)
 
 Brief statement describing libcurl
 
@@ -12,14 +12,14 @@ The packages generated with this **conanfile** can be found in [Bintray](https:/
 
 ### Basic setup
 
-    $ conan install libcurl/7.56.1@bincrafters/stable
+    $ conan install libcurl/7.52.1@bincrafters/stable
 	
 ### Project setup
 
 If you handle multiple dependencies in your project is better to add a *conanfile.txt*
 
     [requires]
-    libcurl/7.56.1@bincrafters/stable
+    libcurl/7.52.1@bincrafters/stable
 
     [generators]
     txt
@@ -46,7 +46,7 @@ The following command both runs all the steps of the conan file, and publishes t
 
 ## Upload
 
-    $ conan upload libcurl/7.56.1@bincrafters/stable --all -r bincrafters
+    $ conan upload libcurl/7.52.1@bincrafters/stable --all -r bincrafters
 	
 ## License
 [Curl License](https://curl.haxx.se/docs/copyright.html)

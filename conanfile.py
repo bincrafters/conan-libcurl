@@ -7,7 +7,7 @@ import os
 
 class LibcurlConan(ConanFile):
     name = "libcurl"
-    version = "7.56.1"
+    version = "7.52.1"
     generators = "cmake", "txt"
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False], # SHARED IN LINUX IS HAVING PROBLEMS WITH LIBEFENCE
