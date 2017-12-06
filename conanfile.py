@@ -79,7 +79,7 @@ class LibcurlConan(ConanFile):
 
         if self.settings.os == "Linux" or self.settings.os == "Macos":
 
-            suffix = " --without-libidn " if not self.options.with_libidn else " --with-libidn "
+            suffix = " --without-libidn2 " if not self.options.with_libidn else " --with-libidn2 "
             suffix += " --without-librtmp " if not self.options.with_librtmp else " --with-librtmp "
             suffix += " --without-libmetalink " if not self.options.with_libmetalink else " --with-libmetalink "
             suffix += " --without-nghttp2 " if not self.options.with_nghttp2 else " --with-nghttp2 "
