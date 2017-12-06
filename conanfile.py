@@ -69,6 +69,8 @@ class LibcurlConan(ConanFile):
             self.run("chmod +x ./%s/configure" % self.name)
 
     def build(self):
+        version_components = self.version.split('.')
+
         if self.options.with_largemaxwritesize:
             tools.replace_in_file(os.path.join(self.name, 'include', 'curl', 'curl.h'),
                                   "define CURL_MAX_WRITE_SIZE 16384", "define CURL_MAX_WRITE_SIZE 10485760")
@@ -80,7 +82,12 @@ class LibcurlConan(ConanFile):
 
         if self.settings.os == "Linux" or self.settings.os == "Macos":
 
-            suffix = " --without-libidn " if not self.options.with_libidn else " --with-libidn "
+            suffix = ''
+            use_idn2 = int(version_components[0]) == 7 and int(version_components[1]) >= 53
+            if use_idn2:
+                suffix += " --without-libidn2 " if not self.options.with_libidn else " --with-libidn2 "
+            else:
+                suffix += " --without-libidn " if not self.options.with_libidn else " --with-libidn "
             suffix += " --without-librtmp " if not self.options.with_librtmp else " --with-librtmp "
             suffix += " --without-libmetalink " if not self.options.with_libmetalink else " --with-libmetalink "
             suffix += " --without-libpsl " if not self.options.with_libpsl else " --with-libpsl "
