@@ -20,13 +20,14 @@ class LibcurlConan(ConanFile):
                "with_libidn": [True, False],
                "with_librtmp": [True, False],
                "with_libmetalink": [True, False],
+               "with_libpsl": [True, False],
                "with_largemaxwritesize": [True, False],
                "with_nghttp2": [True, False]}
-    default_options = "shared=False", "with_openssl=True", "disable_threads=False", \
-                      "with_ldap=False", "custom_cacert=False", "darwin_ssl=True",  \
-                      "with_libssh2=False", "with_libidn=False", "with_librtmp=False", \
-                      "with_libmetalink=False", "with_largemaxwritesize=False", \
-                      "with_nghttp2=False"
+    default_options = ("shared=False", "with_openssl=True", "disable_threads=False",
+                       "with_ldap=False", "custom_cacert=False", "darwin_ssl=True",
+                       "with_libssh2=False", "with_libidn=False", "with_librtmp=False",
+                       "with_libmetalink=False", "with_largemaxwritesize=False",
+                       "with_libpsl=False", "with_nghttp2=False")
     exports = ["FindCURL.cmake"]
     url = "http://github.com/bincrafters/conan-libcurl"
     license = "https://curl.haxx.se/docs/copyright.html"
@@ -73,7 +74,7 @@ class LibcurlConan(ConanFile):
                                   "define CURL_MAX_WRITE_SIZE 16384", "define CURL_MAX_WRITE_SIZE 10485760")
 
         tools.replace_in_file('FindCURL.cmake', 'set(CURL_VERSION_STRING "0")', 'set(CURL_VERSION_STRING "%s")' % self.version, strict=True)
- 
+
         # temporary workaround for DEBUG_POSTFIX (curl issues #1796, #2121)
         tools.replace_in_file(os.path.join(self.name, 'lib', 'CMakeLists.txt'), '  DEBUG_POSTFIX "-d"', '  DEBUG_POSTFIX ""', strict=False)
 
@@ -82,6 +83,7 @@ class LibcurlConan(ConanFile):
             suffix = " --without-libidn " if not self.options.with_libidn else " --with-libidn "
             suffix += " --without-librtmp " if not self.options.with_librtmp else " --with-librtmp "
             suffix += " --without-libmetalink " if not self.options.with_libmetalink else " --with-libmetalink "
+            suffix += " --without-libpsl " if not self.options.with_libpsl else " --with-libpsl "
             suffix += " --without-nghttp2 " if not self.options.with_nghttp2 else " --with-nghttp2 "
 
             if self.options.with_openssl:
