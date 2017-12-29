@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from conans import ConanFile, AutoToolsBuildEnvironment, CMake, tools
+from conans import ConanFile, AutoToolsBuildEnvironment, RunEnvironment, CMake, tools
 import os
 
 
@@ -121,31 +121,36 @@ class LibcurlConan(ConanFile):
                 suffix += ' --with-ca-bundle=cacert.pem'
 
             env_build = AutoToolsBuildEnvironment(self)
+
             with tools.environment_append(env_build.vars):
 
-                old_str = "-install_name \\$rpath/"
-                new_str = "-install_name "
-                tools.replace_in_file("%s/configure" % self.name, old_str, new_str)
+                # run configure with *LD_LIBRARY_PATH env vars
+                # it allows to pick up shared openssl
+                with tools.environment_append(RunEnvironment(self).vars):
 
-                configure = "cd %s && %s ./configure %s" % (self.name, '', suffix)
-                self.output.warn(configure)
+                    old_str = "-install_name \\$rpath/"
+                    new_str = "-install_name "
+                    tools.replace_in_file("%s/configure" % self.name, old_str, new_str)
 
-                # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
-                # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
-                # so just ignore it if not matched
-                tools.replace_in_file("%s/configure" % self.name, 'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"', 'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"', strict=False)
+                    configure = "cd %s && %s ./configure %s" % (self.name, '', suffix)
+                    self.output.warn(configure)
 
-                self.output.warn(configure)
-                self.run(configure)
+                    # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
+                    # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
+                    # so just ignore it if not matched
+                    tools.replace_in_file("%s/configure" % self.name, 'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"', 'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"', strict=False)
 
-                # temporary fix for xcode9
-                # extremely fragile because make doesn't see CFLAGS from env, only from cmdline
-                if self.settings.os == "Macos":
-                    make_suffix = "CFLAGS=\"-Wno-unguarded-availability " + env_build.vars['CFLAGS'] + "\""
-                else:
-                    make_suffix = ''
+                    self.output.warn(configure)
+                    self.run(configure)
 
-                self.run("cd %s && make %s" % (self.name, make_suffix))
+                    # temporary fix for xcode9
+                    # extremely fragile because make doesn't see CFLAGS from env, only from cmdline
+                    if self.settings.os == "Macos":
+                        make_suffix = "CFLAGS=\"-Wno-unguarded-availability " + env_build.vars['CFLAGS'] + "\""
+                    else:
+                        make_suffix = ''
+
+                    self.run("cd %s && make %s" % (self.name, make_suffix))
         else:
             # Do not compile curl tool, just library
             conan_magic_lines = '''project(CURL)
