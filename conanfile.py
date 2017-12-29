@@ -28,9 +28,11 @@ class LibcurlConan(ConanFile):
                        "with_libssh2=False", "with_libidn=False", "with_librtmp=False",
                        "with_libmetalink=False", "with_largemaxwritesize=False",
                        "with_libpsl=False", "with_nghttp2=False")
-    exports = ["FindCURL.cmake"]
+    exports = ["LICENSE.md"]
+    exports_sources = ["FindCURL.cmake"]
     url = "http://github.com/bincrafters/conan-libcurl"
     license = "https://curl.haxx.se/docs/copyright.html"
+    website = "https://curl.haxx.se"
     description = "command line tool and library for transferring data with URLs"
     short_paths = True
 
@@ -178,7 +180,7 @@ CONAN_BASIC_SETUP()
             cmake.build()
 
     def package(self):
-        self.copy(pattern="LICENSE")
+        self.copy("libcurl/COPYING", dst="licenses", ignore_case=True, keep_path=False)
 
         # Copy findZLIB.cmake to package
         self.copy("FindCURL.cmake", ".", ".")
