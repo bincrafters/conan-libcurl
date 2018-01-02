@@ -8,6 +8,12 @@ Brief statement describing libcurl
 
 The packages generated with this **conanfile** can be found in [Bintray](https://bintray.com/bincrafters/public-conan/libcurl%3Abincrafters).
 
+## Issues
+
+If you wish to report an issue or make a request for a Bincrafters package, please do so here:  
+
+[Bincrafters Community Issues](https://github.com/bincrafters/community/issues)
+
 ## For Users: Use this package
 
 ### Basic setup
