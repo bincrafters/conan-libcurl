@@ -37,6 +37,8 @@ class LibcurlConan(ConanFile):
     short_paths = True
 
     def config_options(self):
+        version_components = self.version.split('.')
+
         del self.settings.compiler.libcxx
         if self.options.with_openssl:
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
@@ -50,6 +52,11 @@ class LibcurlConan(ConanFile):
                 self.options.remove("darwin_ssl")
             except:
                 pass
+
+        # libpsl is supported for libcurl >= 7.46.0
+        use_libpsl = int(version_components[0]) == 7 and int(version_components[1]) >= 46
+        if not use_libpsl:
+            self.options.remove('with_libpsl')
 
     def requirements(self):
         if self.options.with_openssl:
@@ -92,7 +99,9 @@ class LibcurlConan(ConanFile):
                 suffix += " --without-libidn " if not self.options.with_libidn else " --with-libidn "
             suffix += " --without-librtmp " if not self.options.with_librtmp else " --with-librtmp "
             suffix += " --without-libmetalink " if not self.options.with_libmetalink else " --with-libmetalink "
-            suffix += " --without-libpsl " if not self.options.with_libpsl else " --with-libpsl "
+            use_libpsl = int(version_components[0]) == 7 and int(version_components[1]) >= 46
+            if use_libpsl:
+                suffix += " --without-libpsl " if not self.options.with_libpsl else " --with-libpsl "
             suffix += " --without-nghttp2 " if not self.options.with_nghttp2 else " --with-nghttp2 "
 
             if self.options.with_openssl:
@@ -130,29 +139,32 @@ class LibcurlConan(ConanFile):
                 # it allows to pick up shared openssl
                 with tools.environment_append(RunEnvironment(self).vars):
 
-                    old_str = "-install_name \\$rpath/"
-                    new_str = "-install_name "
-                    tools.replace_in_file("%s/configure" % self.name, old_str, new_str)
+                    with tools.chdir(self.name):
+                        # disable rpath build
+                        tools.replace_in_file("configure", r"-install_name \$rpath/", "-install_name ")
 
-                    configure = "cd %s && %s ./configure %s" % (self.name, '', suffix)
-                    self.output.warn(configure)
+                        # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
+                        # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
+                        # so just ignore it if not matched
+                        tools.replace_in_file("configure",
+                                              'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
+                                              'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"',
+                                              strict=False)
 
-                    # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
-                    # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
-                    # so just ignore it if not matched
-                    tools.replace_in_file("%s/configure" % self.name, 'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"', 'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"', strict=False)
+                        cmd = "./configure %s" % suffix
+                        self.output.warn(cmd)
+                        self.run(cmd)
 
-                    self.output.warn(configure)
-                    self.run(configure)
+                        # temporary fix for xcode9
+                        # extremely fragile because make doesn't see CFLAGS from env, only from cmdline
+                        if self.settings.os == "Macos":
+                            make_suffix = "CFLAGS=\"-Wno-unguarded-availability " + env_build.vars['CFLAGS'] + "\""
+                        else:
+                            make_suffix = ''
 
-                    # temporary fix for xcode9
-                    # extremely fragile because make doesn't see CFLAGS from env, only from cmdline
-                    if self.settings.os == "Macos":
-                        make_suffix = "CFLAGS=\"-Wno-unguarded-availability " + env_build.vars['CFLAGS'] + "\""
-                    else:
-                        make_suffix = ''
-
-                    self.run("cd %s && make %s" % (self.name, make_suffix))
+                        cmd = "make %s" % make_suffix
+                        self.output.warn(cmd)
+                        self.run(cmd)
         else:
             # Do not compile curl tool, just library
             conan_magic_lines = '''project(CURL)
@@ -229,6 +241,8 @@ CONAN_BASIC_SETUP()
             self.cpp_info.libs.append('Ws2_32')
             if self.options.with_ldap:
                 self.cpp_info.libs.append("wldap32")
+            if self.options.with_openssl:
+                self.cpp_info.libs.extend(self.deps_cpp_info['OpenSSL'].libs)
 
         if not self.options.shared:
             self.cpp_info.defines.append("CURL_STATICLIB=1")
