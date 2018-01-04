@@ -37,6 +37,8 @@ class LibcurlConan(ConanFile):
     short_paths = True
 
     def config_options(self):
+        version_components = self.version.split('.')
+
         del self.settings.compiler.libcxx
         if self.options.with_openssl:
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
@@ -50,6 +52,11 @@ class LibcurlConan(ConanFile):
                 self.options.remove("darwin_ssl")
             except:
                 pass
+
+        # libpsl is supported for libcurl >= 7.46.0
+        use_libpsl = int(version_components[0]) == 7 and int(version_components[1]) >= 46
+        if not use_libpsl:
+            self.options.remove('with_libpsl')
 
     def requirements(self):
         if self.options.with_openssl:
@@ -92,7 +99,9 @@ class LibcurlConan(ConanFile):
                 suffix += " --without-libidn " if not self.options.with_libidn else " --with-libidn "
             suffix += " --without-librtmp " if not self.options.with_librtmp else " --with-librtmp "
             suffix += " --without-libmetalink " if not self.options.with_libmetalink else " --with-libmetalink "
-            suffix += " --without-libpsl " if not self.options.with_libpsl else " --with-libpsl "
+            use_libpsl = int(version_components[0]) == 7 and int(version_components[1]) >= 46
+            if use_libpsl:
+                suffix += " --without-libpsl " if not self.options.with_libpsl else " --with-libpsl "
             suffix += " --without-nghttp2 " if not self.options.with_nghttp2 else " --with-nghttp2 "
 
             if self.options.with_openssl:
