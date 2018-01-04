@@ -1,62 +1,45 @@
-[ ![Download](https://api.bintray.com/packages/bincrafters/public-conan/libcurl%3Abincrafters/images/download.svg?version=7.52.1%3Astable) ](https://bintray.com/bincrafters/public-conan/libcurl%3Abincrafters/7.52.1%3Astable/link)
-[![Build Status](https://travis-ci.org/bincrafters/conan-libcurl.svg?branch=stable%2F7.52.1)](https://travis-ci.org/bincrafters/conan-libcurl)
-[![Build status](https://ci.appveyor.com/api/projects/status/t9we1v55dmd6jm4k/branch/stable/7.52.1?svg=true)](https://ci.appveyor.com/project/BinCrafters/conan-libcurl/branch/stable/7.52.1)
+| Bintray | Appveyor | Travis |
+|---------|-----------|--------|
+|[ ![Download](https://api.bintray.com/packages/bincrafters/public-conan/libcurl%3Abincrafters/images/download.svg) ](https://bintray.com/bincrafters/public-conan/libcurl%3Abincrafters/_latestVersion)|[![Build status](https://ci.appveyor.com/api/projects/status/t9we1v55dmd6jm4k?svg=true)](https://ci.appveyor.com/project/BinCrafters/conan-libcurl)
+|[![Build Status](https://travis-ci.org/bincrafters/conan-libcurl.svg?branch=stable%2F7.52.1)](https://travis-ci.org/bincrafters/conan-libcurl)|
 
-Brief statement describing libcurl
+## Conan.io Information
 
-[Conan.io](https://conan.io) package for [libcurl](https://libcurl.org) project
+Bincrafters packages can be found in the following public Conan repository:
 
-The packages generated with this **conanfile** can be found in [Bintray](https://bintray.com/bincrafters/public-conan/libcurl%3Abincrafters).
+[Bincrafters Public Conan Repository on Bintray](https://bintray.com/bincrafters/public-conan)
+
+*Note: You can click the "Set Me Up" button on the Bintray page above for instructions on using packages from this repository.*
 
 ## Issues
 
-If you wish to report an issue or make a request for a Bincrafters package, please do so here:  
+If you wish to report an issue or make a request for a Bincrafters package, please do so here:
 
 [Bincrafters Community Issues](https://github.com/bincrafters/community/issues)
 
-## For Users: Use this package
+## General Information
 
-### Basic setup
+This GIT repository is managed by the Bincrafters team and holds files related to Conan.io.  For detailed information about Bincrafters and Conan.io, please visit the following resources:
 
-    $ conan install libcurl/7.52.1@bincrafters/stable
+[Bincrafters Wiki - Common README](https://github.com/bincrafters/community/wiki/Common-README.md)
+
+[Bincrafters Technical Documentation](http://bincrafters.readthedocs.io/en/latest/)
+
+[Bincrafters Blog](https://bincrafters.github.io)
+
+## License Information
+
+Bincrafters packages are hosted on [Bintray](https://bintray.com) and contain Open-Source software which is licensed by the software's maintainers and NOT Bincrafters.  For each Open-Source package published by Bincrafters, the packaging process obtains the required license files along with the original source files from the maintainer, and includes these license files in the generated Conan packages.
+
+The contents of this GIT repository are completely separate from the software being packaged and therefor licensed separately.  The license for all files contained in this GIT repository are defined in the [LICENSE.md](LICENSE.md) file in this repository.  The licenses included with all Conan packages published by Bincrafters can be found in the Conan package directories in the following locations, relative to the Conan Cache root (`~/.conan` by default):
+
+### License(s) for packaged software:
+
+    ~/.conan/data/libcurl/7.52.1/bincrafters/stable/package/6dc7d754a303fe0f4ef2b13e05d27822804b69db/licenses/COPYING
+
+*Note :   The most common filenames for OSS licenses are `LICENSE` AND `COPYING` without file extensions.*
 	
-### Project setup
+### License for Bincrafters recipe:
 
-If you handle multiple dependencies in your project is better to add a *conanfile.txt*
+    ~/.conan/data/libcurl/7.52.1/bincrafters/stable/export/LICENSE.md
 
-    [requires]
-    libcurl/7.52.1@bincrafters/stable
-
-    [generators]
-    txt
-
-Complete the installation of requirements for your project running:
-
-    $ mkdir build && cd build && conan install ..
-	
-Note: It is recommended that you run conan install from a build directory and not the root of the project directory.  This is because conan generates *conanbuildinfo* files specific to a single build configuration which by default comes from an autodetected default profile located in ~/.conan/profiles/default .  If you pass different build configuration options to conan install, it will generate different *conanbuildinfo* files.  Thus, they should not be added to the root of the project, nor committed to git.
-
-## For Packagers: Publish this Package
-
-The example below shows the commands used to publish to bincrafters conan repository. To publish to your own conan respository (for example, after forking this git repository), you will need to change the commands below accordingly.
-
-## Build and package 
-
-The following command both runs all the steps of the conan file, and publishes the package to the local system cache.  This includes downloading dependencies from "build_requires" and "requires" , and then running the build() method. 
-
-    $ conan create bincrafters/stable
-
-## Add Remote
-
-	$ conan remote add bincrafters "https://api.bintray.com/conan/bincrafters/public-conan"
-
-## Upload
-
-    $ conan upload libcurl/7.52.1@bincrafters/stable --all -r bincrafters
-	
-## License
-[Curl License](https://curl.haxx.se/docs/copyright.html)
-
-## Credits
-
-Package is inherited from original lasote/conan-libcurl recipe with modifications from theirix/conan-libcurl.
