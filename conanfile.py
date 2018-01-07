@@ -150,8 +150,13 @@ class LibcurlConan(ConanFile):
                 env_run = RunEnvironment(self)
                 # run configure with *LD_LIBRARY_PATH env vars
                 # it allows to pick up shared openssl
-                self.output.warn(repr(env_run.vars))
-                with tools.environment_append(env_run.vars):
+                env_run_vars = env_run.vars
+                if self.settings.os == "Windows" and self.settings.compiler == "gcc":
+                    # fix for mingw: RunEnvironment provides backslashes while mingw consumes forward slashes
+                    for key in env_run.vars.keys():
+                        env_run_vars[key] = env_run_vars[key].replace("\\", "/")
+                self.output.warn(repr(env_run_vars))
+                with tools.environment_append(env_run_vars):
 
                     with tools.chdir(self.name):
                         # disable rpath build
