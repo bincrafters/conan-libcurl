@@ -153,8 +153,8 @@ class LibcurlConan(ConanFile):
                 env_run_vars = env_run.vars
                 if self.settings.os == "Windows" and self.settings.compiler == "gcc":
                     # fix for mingw: RunEnvironment provides backslashes while mingw consumes forward slashes
-                    for key in env_run.vars.keys():
-                        env_run_vars[key] = env_run_vars[key].replace("\\", "/")
+                    for key in env_run_vars.keys():
+                        env_run_vars[key] = [tools.unix_path(s) for s in env_run_vars[key]]
                 self.output.warn(repr(env_run_vars))
                 with tools.environment_append(env_run_vars):
 
