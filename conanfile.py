@@ -147,9 +147,11 @@ class LibcurlConan(ConanFile):
 
             with tools.environment_append(env_build.vars):
 
+                env_run = RunEnvironment(self)
                 # run configure with *LD_LIBRARY_PATH env vars
                 # it allows to pick up shared openssl
-                with tools.environment_append(RunEnvironment(self).vars):
+                self.output.warn(repr(env_run.vars))
+                with tools.environment_append(env_run.vars):
 
                     with tools.chdir(self.name):
                         # disable rpath build
