@@ -44,7 +44,7 @@ class LibcurlConan(ConanFile):
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
                 self.options["OpenSSL"].shared = self.options.shared
         if self.options.with_libssh2:
-            if self.settings.os != "Windows":
+            if self.settings.compiler != "Visual Studio":
                 self.options["libssh2"].shared = self.options.shared
 
         if self.settings.os != "Macos":
@@ -65,7 +65,7 @@ class LibcurlConan(ConanFile):
             elif self.settings.os == "Macos" and self.options.darwin_ssl:
                 self.requires.add("zlib/[~=1.2]@conan/stable", private=False)
         if self.options.with_libssh2:
-            if self.settings.os != "Windows":
+            if self.settings.compiler != "Visual Studio":
                 self.requires.add("libssh2/[~=1.8]@bincrafters/stable", private=False)
 
         self.requires.add("zlib/[~=1.2]@conan/stable", private=False)
@@ -74,7 +74,7 @@ class LibcurlConan(ConanFile):
         tools.get("https://curl.haxx.se/download/curl-%s.tar.gz" % self.version)
         os.rename("curl-%s" % self.version, self.name)
         tools.download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem", verify=False)
-        if self.settings.os != "Windows":
+        if self.settings.compiler != "Visual Studio":
             self.run("chmod +x ./%s/configure" % self.name)
 
     def build(self):
@@ -204,7 +204,7 @@ CONAN_BASIC_SETUP()
         self.copy(pattern="cacert.pem", keep_path=False)
 
         # Copying static and dynamic libs
-        if self.settings.os == "Windows":
+        if self.settings.compiler == "Visual Studio":
             if self.options.shared:
                 self.copy(pattern="*.dll", dst="bin", src=self.name, keep_path=False)
             self.copy(pattern="*.lib", dst="lib", src=self.name, keep_path=False)
@@ -218,7 +218,7 @@ CONAN_BASIC_SETUP()
                 self.copy(pattern="*.a", dst="lib", src=self.name, keep_path=False, links=True)
 
     def package_info(self):
-        if self.settings.os != "Windows":
+        if self.settings.compiler != "Visual Studio":
             self.cpp_info.libs = ['curl']
             if self.settings.os == "Linux":
                 self.cpp_info.libs.extend(["rt", "pthread"])
