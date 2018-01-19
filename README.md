@@ -1,6 +1,8 @@
+## Package Status
+
 | Bintray | Appveyor | Travis |
 |---------|-----------|--------|
-|[ ![Download](https://api.bintray.com/packages/bincrafters/public-conan/libcurl%3Abincrafters/images/download.svg) ](https://bintray.com/bincrafters/public-conan/libcurl%3Abincrafters/_latestVersion)|[![Build status](https://ci.appveyor.com/api/projects/status/t9we1v55dmd6jm4k?svg=true)](https://ci.appveyor.com/project/BinCrafters/conan-libcurl)
+|[ ![Download](https://api.bintray.com/packages/bincrafters/public-conan/libcurl%3Abincrafters/images/download.svg) ](https://bintray.com/bincrafters/public-conan/libcurl%3Abincrafters/_latestVersion)|[![Build status](https://ci.appveyor.com/api/projects/status/github/bincrafters/conan-libcurl?svg=true)](https://ci.appveyor.com/project/BinCrafters/conan-libcurl)
 |[![Build Status](https://travis-ci.org/bincrafters/conan-libcurl.svg?branch=stable%2F7.52.1)](https://travis-ci.org/bincrafters/conan-libcurl)|
 
 ## Conan.io Information
@@ -35,11 +37,12 @@ The contents of this GIT repository are completely separate from the software be
 
 ### License(s) for packaged software:
 
-    ~/.conan/data/libcurl/7.52.1/bincrafters/stable/package/6dc7d754a303fe0f4ef2b13e05d27822804b69db/licenses/COPYING
+    ~/.conan/data/<pkg_name>/<pkg_version>/bincrafters/package/<random_package_id>/license/<LICENSE_FILES_HERE>
 
 *Note :   The most common filenames for OSS licenses are `LICENSE` AND `COPYING` without file extensions.*
 	
 ### License for Bincrafters recipe:
 
-    ~/.conan/data/libcurl/7.52.1/bincrafters/stable/export/LICENSE.md
+    ~/.conan/data/<pkg_name>/<pkg_version>/bincrafters/export/LICENSE.md
 
+	
