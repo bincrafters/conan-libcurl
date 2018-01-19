@@ -44,7 +44,7 @@ class LibcurlConan(ConanFile):
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
                 self.options["OpenSSL"].shared = self.options.shared
         if self.options.with_libssh2:
-            if self.settings.os != "Windows":
+            if self.settings.compiler != "Visual Studio":
                 self.options["libssh2"].shared = self.options.shared
 
         if self.settings.os != "Macos":
@@ -65,7 +65,7 @@ class LibcurlConan(ConanFile):
             elif self.settings.os == "Macos" and self.options.darwin_ssl:
                 self.requires.add("zlib/[~=1.2]@conan/stable", private=False)
         if self.options.with_libssh2:
-            if self.settings.os != "Windows":
+            if self.settings.compiler != "Visual Studio":
                 self.requires.add("libssh2/[~=1.8]@bincrafters/stable", private=False)
 
         self.requires.add("zlib/[~=1.2]@conan/stable", private=False)
@@ -74,7 +74,7 @@ class LibcurlConan(ConanFile):
         tools.get("https://curl.haxx.se/download/curl-%s.tar.gz" % self.version)
         os.rename("curl-%s" % self.version, self.name)
         tools.download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem", verify=False)
-        if self.settings.os != "Windows":
+        if self.settings.compiler != "Visual Studio":
             self.run("chmod +x ./%s/configure" % self.name)
 
     def build(self):
@@ -89,7 +89,9 @@ class LibcurlConan(ConanFile):
         # temporary workaround for DEBUG_POSTFIX (curl issues #1796, #2121)
         tools.replace_in_file(os.path.join(self.name, 'lib', 'CMakeLists.txt'), '  DEBUG_POSTFIX "-d"', '  DEBUG_POSTFIX ""', strict=False)
 
-        if self.settings.os == "Linux" or self.settings.os == "Macos":
+        use_cmake = self.settings.compiler == "Visual Studio"
+
+        if not use_cmake:
 
             suffix = ''
             use_idn2 = int(version_components[0]) == 7 and int(version_components[1]) >= 53
@@ -131,13 +133,30 @@ class LibcurlConan(ConanFile):
             if self.options.custom_cacert:
                 suffix += ' --with-ca-bundle=cacert.pem'
 
+            # for mingw
+            if self.settings.os == "Windows" and self.settings.compiler == "gcc":
+                if self.settings.arch == "x86_64":
+                    suffix += ' --host=x86_64-w64-mingw32'
+                if self.settings.arch == "x86":
+                    suffix += ' --build=i686-w64-mingw32'
+                    suffix += ' --host=i686-w64-mingw32'
+
             env_build = AutoToolsBuildEnvironment(self)
+
+            self.output.warn(repr(env_build.vars))
 
             with tools.environment_append(env_build.vars):
 
+                env_run = RunEnvironment(self)
                 # run configure with *LD_LIBRARY_PATH env vars
                 # it allows to pick up shared openssl
-                with tools.environment_append(RunEnvironment(self).vars):
+                env_run_vars = env_run.vars
+                if self.settings.os == "Windows" and self.settings.compiler == "gcc":
+                    # fix for mingw: RunEnvironment provides backslashes while mingw consumes forward slashes
+                    for key in env_run_vars.keys():
+                        env_run_vars[key] = [tools.unix_path(s) for s in env_run_vars[key]]
+                self.output.warn(repr(env_run_vars))
+                with tools.environment_append(env_run_vars):
 
                     with tools.chdir(self.name):
                         # disable rpath build
@@ -153,7 +172,10 @@ class LibcurlConan(ConanFile):
 
                         cmd = "./configure %s" % suffix
                         self.output.warn(cmd)
-                        self.run(cmd)
+                        if self.settings.os == "Windows":
+                            tools.run_in_windows_bash(self, cmd)
+                        else:
+                            self.run(cmd)
 
                         # temporary fix for xcode9
                         # extremely fragile because make doesn't see CFLAGS from env, only from cmdline
@@ -164,7 +186,10 @@ class LibcurlConan(ConanFile):
 
                         cmd = "make %s" % make_suffix
                         self.output.warn(cmd)
-                        self.run(cmd)
+                        if self.settings.os == "Windows":
+                            tools.run_in_windows_bash(self, cmd)
+                        else:
+                            self.run(cmd)
         else:
             # Do not compile curl tool, just library
             conan_magic_lines = '''project(CURL)
@@ -192,6 +217,11 @@ CONAN_BASIC_SETUP()
             cmake.build()
 
     def package(self):
+        # debug
+        for dirpath, dirs, files in os.walk(self.name):
+            for f in files:
+                self.output.warn(dirpath+'/'+f)
+
         self.copy("libcurl/COPYING", dst="licenses", ignore_case=True, keep_path=False)
 
         # Copy findZLIB.cmake to package
@@ -204,7 +234,7 @@ CONAN_BASIC_SETUP()
         self.copy(pattern="cacert.pem", keep_path=False)
 
         # Copying static and dynamic libs
-        if self.settings.os == "Windows":
+        if self.settings.compiler == "Visual Studio":
             if self.options.shared:
                 self.copy(pattern="*.dll", dst="bin", src=self.name, keep_path=False)
             self.copy(pattern="*.lib", dst="lib", src=self.name, keep_path=False)
@@ -218,7 +248,7 @@ CONAN_BASIC_SETUP()
                 self.copy(pattern="*.a", dst="lib", src=self.name, keep_path=False, links=True)
 
     def package_info(self):
-        if self.settings.os != "Windows":
+        if self.settings.compiler != "Visual Studio":
             self.cpp_info.libs = ['curl']
             if self.settings.os == "Linux":
                 self.cpp_info.libs.extend(["rt", "pthread"])
