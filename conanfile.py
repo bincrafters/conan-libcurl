@@ -8,7 +8,15 @@ import os
 class LibcurlConan(ConanFile):
     name = "libcurl"
     version = "7.52.1"
-    generators = "cmake", "txt"
+    description = "command line tool and library for transferring data with URLs"
+    url = "http://github.com/bincrafters/conan-libcurl"
+    license = "MIT"
+    short_paths = True
+    exports = ["LICENSE.md", "FindCURL.cmake"]
+    exports_sources = ["CMakeLists.txt"]
+    generators = "cmake"
+    source_subfolder = "source_subfolder"
+    build_subfolder = "build_subfolder"
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False], # SHARED IN LINUX IS HAVING PROBLEMS WITH LIBEFENCE
                "with_openssl": [True, False],
@@ -28,13 +36,6 @@ class LibcurlConan(ConanFile):
                        "with_libssh2=False", "with_libidn=False", "with_librtmp=False",
                        "with_libmetalink=False", "with_largemaxwritesize=False",
                        "with_libpsl=False", "with_nghttp2=False")
-    exports = ["LICENSE.md"]
-    exports_sources = ["FindCURL.cmake"]
-    url = "http://github.com/bincrafters/conan-libcurl"
-    license = "https://curl.haxx.se/docs/copyright.html"
-    website = "https://curl.haxx.se"
-    description = "command line tool and library for transferring data with URLs"
-    short_paths = True
 
     def config_options(self):
         version_components = self.version.split('.')
@@ -72,180 +73,35 @@ class LibcurlConan(ConanFile):
 
     def source(self):
         tools.get("https://curl.haxx.se/download/curl-%s.tar.gz" % self.version)
-        os.rename("curl-%s" % self.version, self.name)
+        os.rename("curl-%s" % self.version, self.source_subfolder)
         tools.download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem", verify=False)
         if self.settings.compiler != "Visual Studio":
-            self.run("chmod +x ./%s/configure" % self.name)
+            self.run("chmod +x " + os.path.join(self.source_subfolder, "configure"))
 
     def build(self):
-        version_components = self.version.split('.')
-
-        if self.options.with_largemaxwritesize:
-            tools.replace_in_file(os.path.join(self.name, 'include', 'curl', 'curl.h'),
-                                  "define CURL_MAX_WRITE_SIZE 16384", "define CURL_MAX_WRITE_SIZE 10485760")
-
-        tools.replace_in_file('FindCURL.cmake', 'set(CURL_VERSION_STRING "0")', 'set(CURL_VERSION_STRING "%s")' % self.version, strict=True)
-
-        # temporary workaround for DEBUG_POSTFIX (curl issues #1796, #2121)
-        tools.replace_in_file(os.path.join(self.name, 'lib', 'CMakeLists.txt'), '  DEBUG_POSTFIX "-d"', '  DEBUG_POSTFIX ""', strict=False)
-
-        use_cmake = self.settings.compiler == "Visual Studio"
-
-        if not use_cmake:
-
-            suffix = ''
-            use_idn2 = int(version_components[0]) == 7 and int(version_components[1]) >= 53
-            if use_idn2:
-                suffix += " --without-libidn2 " if not self.options.with_libidn else " --with-libidn2 "
-            else:
-                suffix += " --without-libidn " if not self.options.with_libidn else " --with-libidn "
-            suffix += " --without-librtmp " if not self.options.with_librtmp else " --with-librtmp "
-            suffix += " --without-libmetalink " if not self.options.with_libmetalink else " --with-libmetalink "
-            use_libpsl = int(version_components[0]) == 7 and int(version_components[1]) >= 46
-            if use_libpsl:
-                suffix += " --without-libpsl " if not self.options.with_libpsl else " --with-libpsl "
-            suffix += " --without-nghttp2 " if not self.options.with_nghttp2 else " --with-nghttp2 "
-
-            if self.options.with_openssl:
-                if self.settings.os == "Macos" and self.options.darwin_ssl:
-                    suffix += "--with-darwinssl "
-                else:
-                    suffix += "--with-ssl "
-            else:
-                suffix += "--without-ssl "
-
-            if self.options.with_libssh2:
-                suffix += "--with-libssh2=%s " % self.deps_cpp_info["libssh2"].lib_paths[0]
-            else:
-                suffix += " --without-libssh2 "
-
-            suffix += "--with-zlib=%s " % self.deps_cpp_info["zlib"].lib_paths[0]
-
-            if not self.options.shared:
-                suffix += " --disable-shared"
-
-            if self.options.disable_threads:
-                suffix += " --disable-thread"
-
-            if not self.options.with_ldap:
-                suffix += " --disable-ldap"
-
-            if self.options.custom_cacert:
-                suffix += ' --with-ca-bundle=cacert.pem'
-
-            # for mingw
-            if self.settings.os == "Windows" and self.settings.compiler == "gcc":
-                if self.settings.arch == "x86_64":
-                    suffix += ' --host=x86_64-w64-mingw32'
-                if self.settings.arch == "x86":
-                    suffix += ' --build=i686-w64-mingw32'
-                    suffix += ' --host=i686-w64-mingw32'
-
-            env_build = AutoToolsBuildEnvironment(self)
-
-            self.output.warn(repr(env_build.vars))
-
-            with tools.environment_append(env_build.vars):
-
-                env_run = RunEnvironment(self)
-                # run configure with *LD_LIBRARY_PATH env vars
-                # it allows to pick up shared openssl
-                env_run_vars = env_run.vars
-                if self.settings.os == "Windows" and self.settings.compiler == "gcc":
-                    # fix for mingw: RunEnvironment provides backslashes while mingw consumes forward slashes
-                    for key in env_run_vars.keys():
-                        env_run_vars[key] = [tools.unix_path(s) for s in env_run_vars[key]]
-                self.output.warn(repr(env_run_vars))
-                with tools.environment_append(env_run_vars):
-
-                    with tools.chdir(self.name):
-                        # disable rpath build
-                        tools.replace_in_file("configure", r"-install_name \$rpath/", "-install_name ")
-
-                        # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
-                        # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
-                        # so just ignore it if not matched
-                        tools.replace_in_file("configure",
-                                              'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
-                                              'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"',
-                                              strict=False)
-
-                        cmd = "./configure %s" % suffix
-                        self.output.warn(cmd)
-                        if self.settings.os == "Windows":
-                            tools.run_in_windows_bash(self, cmd)
-                        else:
-                            self.run(cmd)
-
-                        # temporary fix for xcode9
-                        # extremely fragile because make doesn't see CFLAGS from env, only from cmdline
-                        if self.settings.os == "Macos":
-                            make_suffix = "CFLAGS=\"-Wno-unguarded-availability " + env_build.vars['CFLAGS'] + "\""
-                        else:
-                            make_suffix = ''
-
-                        cmd = "make %s" % make_suffix
-                        self.output.warn(cmd)
-                        if self.settings.os == "Windows":
-                            tools.run_in_windows_bash(self, cmd)
-                        else:
-                            self.run(cmd)
+        self.patch_misc_files()
+        if self.settings.os == "Linux" or self.settings.os == "Macos":
+            self.patch_configure()
+            self.build_with_make()
         else:
-            # Do not compile curl tool, just library
-            conan_magic_lines = '''project(CURL)
-cmake_minimum_required(VERSION 3.0)
-include(../conanbuildinfo.cmake)
-CONAN_BASIC_SETUP()
-'''
-            tools.replace_in_file("%s/CMakeLists.txt" % self.name, "cmake_minimum_required(VERSION 2.8 FATAL_ERROR)", conan_magic_lines)
-            tools.replace_in_file("%s/CMakeLists.txt" % self.name, "project( CURL C )", "")
-            tools.replace_in_file("%s/CMakeLists.txt" % self.name, "include(CurlSymbolHiding)", "")
-
-            tools.replace_in_file("%s/src/CMakeLists.txt" % self.name, "add_executable(", "IF(0)\n add_executable(")
-            tools.replace_in_file("%s/src/CMakeLists.txt" % self.name, "install(TARGETS ${EXE_NAME} DESTINATION bin)", "ENDIF()") # EOF
-
-            tools.mkdir(os.path.join(self.name, '_build'))
-
-            cmake = CMake(self)
-            cmake.definitions['BUILD_TESTING'] = False
-            cmake.definitions['CURL_DISABLE_LDAP'] = not self.options.with_ldap
-            cmake.definitions['BUILD_SHARED_LIBS'] = self.options.shared
-            cmake.definitions['CURL_STATICLIB'] = not self.options.shared
-            cmake.definitions['CMAKE_DEBUG_POSTFIX'] = ''
-            cmake.configure(source_dir=os.path.join(self.build_folder, self.name),
-                            build_dir=os.path.join(self.build_folder, self.name, '_build'))
-            cmake.build()
+            self.patch_cmake_files()
+            self.build_with_cmake()
 
     def package(self):
-        # debug
-        for dirpath, dirs, files in os.walk(self.name):
-            for f in files:
-                self.output.warn(dirpath+'/'+f)
-
-        self.copy("libcurl/COPYING", dst="licenses", ignore_case=True, keep_path=False)
-
-        # Copy findZLIB.cmake to package
-        self.copy("FindCURL.cmake", ".", ".")
-
-        # Copying zlib.h, zutil.h, zconf.h
-        self.copy("*.h", "include/curl", "%s" % self.name, keep_path=False)
+        self.copy("FindCURL.cmake")
+        self.copy("COPYING", dst="license", src=self.source_subfolder)
+        
+        include_src=os.path.join(self.source_subfolder,"include", "curl")
+        include_dst=os.path.join("include","curl")
+        self.copy("*.h", dst=include_dst, src=include_src)
 
         # Copy the certs to be used by client
-        self.copy(pattern="cacert.pem", keep_path=False)
-
-        # Copying static and dynamic libs
-        if self.settings.compiler == "Visual Studio":
-            if self.options.shared:
-                self.copy(pattern="*.dll", dst="bin", src=self.name, keep_path=False)
-            self.copy(pattern="*.lib", dst="lib", src=self.name, keep_path=False)
-        else:
-            if self.options.shared:
-                if self.settings.os == "Macos":
-                    self.copy(pattern="*.dylib", dst="lib", keep_path=False, links=True)
-                else:
-                    self.copy(pattern="*.so*", dst="lib", src=self.name, keep_path=False, links=True)
-            else:
-                self.copy(pattern="*.a", dst="lib", src=self.name, keep_path=False, links=True)
+        self.copy("cacert.pem", keep_path=False)
+        self.copy("*.dll", dst="bin", keep_path=False)
+        self.copy("*.lib", dst="lib", keep_path=False)
+        self.copy("*.dylib", dst="lib", keep_path=False, links=True)
+        self.copy("*.so*", dst="lib", keep_path=False, links=True)
+        self.copy("*.a*", dst="lib", keep_path=False, links=True)
 
     def package_info(self):
         if self.settings.compiler != "Visual Studio":
@@ -276,3 +132,126 @@ CONAN_BASIC_SETUP()
 
         if not self.options.shared:
             self.cpp_info.defines.append("CURL_STATICLIB=1")
+
+    def patch_misc_files(self):
+        if self.options.with_largemaxwritesize:
+            tools.replace_in_file(
+                    os.path.join(self.source_subfolder, 'include', 'curl', 'curl.h'),
+                  "define CURL_MAX_WRITE_SIZE 16384", 
+                  "define CURL_MAX_WRITE_SIZE 10485760")
+
+        tools.replace_in_file(
+                'FindCURL.cmake', 
+                'set(CURL_VERSION_STRING "0")', 
+                'set(CURL_VERSION_STRING "%s")' % self.version, strict=True)
+
+        # temporary workaround for DEBUG_POSTFIX (curl issues #1796, #2121)
+        tools.replace_in_file(
+                os.path.join(self.source_subfolder, 'lib', 'CMakeLists.txt'), 
+                '  DEBUG_POSTFIX "-d"', 
+                '  DEBUG_POSTFIX ""', strict=False)
+
+    def get_configure_command_suffix(self):
+        version_components = self.version.split('.')
+        suffix = ''
+        use_idn2 = int(version_components[0]) == 7 and int(version_components[1]) >= 53
+        if use_idn2:
+            suffix += " --without-libidn2 " if not self.options.with_libidn else " --with-libidn2 "
+        else:
+            suffix += " --without-libidn " if not self.options.with_libidn else " --with-libidn "
+        suffix += " --without-librtmp " if not self.options.with_librtmp else " --with-librtmp "
+        suffix += " --without-libmetalink " if not self.options.with_libmetalink else " --with-libmetalink "
+        suffix += " --without-libpsl " if not self.options.with_libpsl else " --with-libpsl "
+        suffix += " --without-nghttp2 " if not self.options.with_nghttp2 else " --with-nghttp2 "
+
+        if self.options.with_openssl:
+            if self.settings.os == "Macos" and self.options.darwin_ssl:
+                suffix += "--with-darwinssl "
+            else:
+                suffix += "--with-ssl "
+        else:
+            suffix += "--without-ssl "
+
+        if self.options.with_libssh2:
+            suffix += "--with-libssh2=%s " % self.deps_cpp_info["libssh2"].lib_paths[0]
+        else:
+            suffix += " --without-libssh2 "
+
+        suffix += "--with-zlib=%s " % self.deps_cpp_info["zlib"].lib_paths[0]
+
+        if not self.options.shared:
+            suffix += " --disable-shared"
+
+        if self.options.disable_threads:
+            suffix += " --disable-thread"
+
+        if not self.options.with_ldap:
+            suffix += " --disable-ldap"
+
+        if self.options.custom_cacert:
+            suffix += ' --with-ca-bundle=cacert.pem'
+            
+        return suffix
+
+    def patch_configure(self):
+        with tools.chdir(self.source_subfolder):
+            tools.replace_in_file(
+                "configure", 
+                "-install_name \\$rpath/", 
+                "-install_name "
+            )
+            # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
+            # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
+            # so just ignore it if not matched
+            tools.replace_in_file(
+                "configure", 
+                'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"', 
+                'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"', strict=False)
+    
+    def build_with_make(self):
+        configure_suffix = self.get_configure_command_suffix()
+        env_build = AutoToolsBuildEnvironment(self)
+        with tools.environment_append(env_build.vars):
+            # temporary fix for xcode9
+            # extremely fragile because make doesn't see CFLAGS from env, only from cmdline
+            if self.settings.os == "Macos":
+                make_suffix = "CFLAGS=\"-Wno-unguarded-availability " + env_build.vars['CFLAGS'] + "\""
+            else:
+                make_suffix = ''
+            
+            with tools.chdir(self.source_subfolder):
+                self.run("./configure " + configure_suffix)
+                self.run("make " + make_suffix)
+                
+    def patch_cmake_files(self):
+        # Do not compile curl tool, just library
+
+        with tools.chdir(self.source_subfolder):
+            tools.replace_in_file(
+                "CMakeLists.txt", 
+                "include(CurlSymbolHiding)", 
+                ""
+            )
+
+        with tools.chdir(os.path.join(self.source_subfolder, "src")):
+            tools.replace_in_file(
+                "CMakeLists.txt", 
+                "add_executable(", 
+                "IF(0)\n add_executable("
+            )
+                
+            tools.replace_in_file(
+                "CMakeLists.txt", 
+                "install(TARGETS ${EXE_NAME} DESTINATION bin)", 
+                "ENDIF()"
+            ) # EOF
+            
+    def build_with_cmake(self):
+        cmake = CMake(self)
+        cmake.definitions['BUILD_TESTING'] = False
+        cmake.definitions['CURL_DISABLE_LDAP'] = not self.options.with_ldap
+        cmake.definitions['BUILD_SHARED_LIBS'] = self.options.shared
+        cmake.definitions['CURL_STATICLIB'] = not self.options.shared
+        cmake.definitions['CMAKE_DEBUG_POSTFIX'] = ''
+        cmake.configure(build_dir=self.build_subfolder)
+        cmake.build()
