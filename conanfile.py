@@ -90,7 +90,7 @@ class LibcurlConan(ConanFile):
     def package(self):
         self.copy("FindCURL.cmake")
         self.copy("COPYING", dst="license", src=self.source_subfolder)
-        
+
         include_src=os.path.join(self.source_subfolder,"include", "curl")
         include_dst=os.path.join("include","curl")
         self.copy("*.h", dst=include_dst, src=include_src)
@@ -137,18 +137,18 @@ class LibcurlConan(ConanFile):
         if self.options.with_largemaxwritesize:
             tools.replace_in_file(
                     os.path.join(self.source_subfolder, 'include', 'curl', 'curl.h'),
-                  "define CURL_MAX_WRITE_SIZE 16384", 
+                  "define CURL_MAX_WRITE_SIZE 16384",
                   "define CURL_MAX_WRITE_SIZE 10485760")
 
         tools.replace_in_file(
-                'FindCURL.cmake', 
-                'set(CURL_VERSION_STRING "0")', 
+                'FindCURL.cmake',
+                'set(CURL_VERSION_STRING "0")',
                 'set(CURL_VERSION_STRING "%s")' % self.version, strict=True)
 
         # temporary workaround for DEBUG_POSTFIX (curl issues #1796, #2121)
         tools.replace_in_file(
-                os.path.join(self.source_subfolder, 'lib', 'CMakeLists.txt'), 
-                '  DEBUG_POSTFIX "-d"', 
+                os.path.join(self.source_subfolder, 'lib', 'CMakeLists.txt'),
+                '  DEBUG_POSTFIX "-d"',
                 '  DEBUG_POSTFIX ""', strict=False)
 
     def get_configure_command_suffix(self):
@@ -190,24 +190,24 @@ class LibcurlConan(ConanFile):
 
         if self.options.custom_cacert:
             suffix += ' --with-ca-bundle=cacert.pem'
-            
+
         return suffix
 
     def patch_configure(self):
         with tools.chdir(self.source_subfolder):
             tools.replace_in_file(
-                "configure", 
-                "-install_name \\$rpath/", 
+                "configure",
+                "-install_name \\$rpath/",
                 "-install_name "
             )
             # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
             # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
             # so just ignore it if not matched
             tools.replace_in_file(
-                "configure", 
-                'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"', 
+                "configure",
+                'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
                 'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"', strict=False)
-    
+
     def build_with_make(self):
         configure_suffix = self.get_configure_command_suffix()
         env_build = AutoToolsBuildEnvironment(self)
@@ -218,34 +218,34 @@ class LibcurlConan(ConanFile):
                 make_suffix = "CFLAGS=\"-Wno-unguarded-availability " + env_build.vars['CFLAGS'] + "\""
             else:
                 make_suffix = ''
-            
+
             with tools.chdir(self.source_subfolder):
                 self.run("./configure " + configure_suffix)
                 self.run("make " + make_suffix)
-                
+
     def patch_cmake_files(self):
         # Do not compile curl tool, just library
 
         with tools.chdir(self.source_subfolder):
             tools.replace_in_file(
-                "CMakeLists.txt", 
-                "include(CurlSymbolHiding)", 
+                "CMakeLists.txt",
+                "include(CurlSymbolHiding)",
                 ""
             )
 
         with tools.chdir(os.path.join(self.source_subfolder, "src")):
             tools.replace_in_file(
-                "CMakeLists.txt", 
-                "add_executable(", 
+                "CMakeLists.txt",
+                "add_executable(",
                 "IF(0)\n add_executable("
             )
-                
+
             tools.replace_in_file(
-                "CMakeLists.txt", 
-                "install(TARGETS ${EXE_NAME} DESTINATION bin)", 
+                "CMakeLists.txt",
+                "install(TARGETS ${EXE_NAME} DESTINATION bin)",
                 "ENDIF()"
             ) # EOF
-            
+
     def build_with_cmake(self):
         cmake = CMake(self)
         cmake.definitions['BUILD_TESTING'] = False
