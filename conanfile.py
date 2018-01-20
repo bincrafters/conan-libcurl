@@ -232,6 +232,14 @@ class LibcurlConan(ConanFile):
         # Do not compile curl tool, just library
 
         with tools.chdir(self.source_subfolder):
+            tools.replace_in_file("CMakeLists.txt",
+                    "cmake_minimum_required(VERSION 2.8 FATAL_ERROR)",
+                    '''cmake_minimum_required(VERSION 3.0)
+                    project(CURL)
+                    include(../conanbuildinfo.cmake)
+                    conan_basic_setup()
+                    '''
+            )
             tools.replace_in_file(
                 "CMakeLists.txt",
                 "include(CurlSymbolHiding)",
