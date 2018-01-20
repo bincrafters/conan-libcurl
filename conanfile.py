@@ -41,6 +41,7 @@ class LibcurlConan(ConanFile):
 
         del self.settings.compiler.libcxx
         if self.options.with_openssl:
+            # enforce shared linking due to openssl dependency
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
                 self.options["OpenSSL"].shared = self.options.shared
         if self.options.with_libssh2:
