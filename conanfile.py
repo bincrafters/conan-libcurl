@@ -13,7 +13,6 @@ class LibcurlConan(ConanFile):
     license = "MIT"
     short_paths = True
     exports = ["LICENSE.md", "FindCURL.cmake"]
-    exports_sources = ["CMakeLists.txt"]
     generators = "cmake"
     source_subfolder = "source_subfolder"
     build_subfolder = "build_subfolder"
