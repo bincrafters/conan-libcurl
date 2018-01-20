@@ -15,7 +15,6 @@ class LibcurlConan(ConanFile):
     exports = ["LICENSE.md", "FindCURL.cmake"]
     generators = "cmake"
     source_subfolder = "source_subfolder"
-    build_subfolder = "build_subfolder"
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False], # SHARED IN LINUX IS HAVING PROBLEMS WITH LIBEFENCE
                "with_openssl": [True, False],
@@ -259,5 +258,5 @@ class LibcurlConan(ConanFile):
         cmake.definitions['BUILD_SHARED_LIBS'] = self.options.shared
         cmake.definitions['CURL_STATICLIB'] = not self.options.shared
         cmake.definitions['CMAKE_DEBUG_POSTFIX'] = ''
-        cmake.configure(build_dir=self.build_subfolder)
+        cmake.configure(source_dir=self.source_subfolder)
         cmake.build()
