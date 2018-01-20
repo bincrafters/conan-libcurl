@@ -82,7 +82,7 @@ class LibcurlConan(ConanFile):
 
     def package(self):
         self.copy("FindCURL.cmake")
-        self.copy("LICENSE", dst="license", src=self.source_subfolder)
+        self.copy("COPYING", dst="license", src=self.source_subfolder)
         
         include_src=os.path.join(self.source_subfolder,"include", "curl")
         include_dst=os.path.join("include","curl")
@@ -94,6 +94,7 @@ class LibcurlConan(ConanFile):
         self.copy("*.lib", dst="lib", keep_path=False)
         self.copy("*.dylib", dst="lib", keep_path=False, links=True)
         self.copy("*.so*", dst="lib", keep_path=False, links=True)
+        self.copy("*.a*", dst="lib", keep_path=False, links=True)
 
     def package_info(self):
         if self.settings.os != "Windows":
