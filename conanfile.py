@@ -84,7 +84,7 @@ class LibcurlConan(ConanFile):
         self.copy("FindCURL.cmake")
         self.copy("LICENSE", dst="license", src=self.source_subfolder)
         
-        include_src=os.path.join("curl","include")
+        include_src=os.path.join(self.source_subfolder,"include", "curl")
         include_dst=os.path.join("include","curl")
         self.copy("*.h", dst=include_dst, src=include_src)
 
