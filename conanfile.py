@@ -266,5 +266,6 @@ class LibcurlConan(ConanFile):
         cmake.definitions['BUILD_SHARED_LIBS'] = self.options.shared
         cmake.definitions['CURL_STATICLIB'] = not self.options.shared
         cmake.definitions['CMAKE_DEBUG_POSTFIX'] = ''
+        cmake.definitions['CMAKE_USE_LIBSSH2'] = self.options.with_libssh2
         cmake.configure(source_dir=self.source_subfolder)
         cmake.build()
