@@ -219,9 +219,15 @@ class LibcurlConan(ConanFile):
             else:
                 make_suffix = ''
 
-            with tools.chdir(self.source_subfolder):
-                self.run("./configure " + configure_suffix)
-                self.run("make " + make_suffix)
+            env_run = RunEnvironment(self)
+            # run configure with *LD_LIBRARY_PATH env vars
+            # it allows to pick up shared openssl
+            self.output.warn(repr(env_run.vars))
+            with tools.environment_append(env_run.vars):
+
+                with tools.chdir(self.source_subfolder):
+                    self.run("./configure " + configure_suffix)
+                    self.run("make " + make_suffix)
 
     def patch_cmake_files(self):
         # Do not compile curl tool, just library
