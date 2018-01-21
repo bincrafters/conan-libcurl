@@ -3,6 +3,7 @@
 
 
 from bincrafters import build_template_default
+import platform
 
 if __name__ == "__main__":
 
