@@ -12,7 +12,8 @@ class LibcurlConan(ConanFile):
     url = "http://github.com/bincrafters/conan-libcurl"
     license = "MIT"
     short_paths = True
-    exports = ["LICENSE.md", "FindCURL.cmake"]
+    exports = ["LICENSE.md"]
+    exports_sources = ["FindCURL.cmake", "patches/*"]
     generators = "cmake"
     source_subfolder = "source_subfolder"
     settings = "os", "arch", "compiler", "build_type"
