@@ -278,7 +278,7 @@ class LibcurlConan(ConanFile):
 
                 with tools.chdir(self.source_subfolder):
                     # autoreconf
-                    self.run('buildconf', win_bash=self.is_mingw)
+                    self.run('./buildconf', win_bash=self.is_mingw)
 
                     # fix generated autotools files
                     tools.replace_in_file(
