@@ -4,21 +4,24 @@
 
 from bincrafters import build_template_default
 import platform
+import copy
 
 if __name__ == "__main__":
 
     builder = build_template_default.get_builder(pure_c=True)
 
-    # add macos builds with openssl too
-    builds = []
-    for settings, options, env_vars, build_requires in builder.builds:
+    items = []
+    for item in builder.items:
         # skip mingw cross-builds
-        if not (platform.system() == "Windows" and settings["compiler"] == "gcc" and settings["arch"] == "x86"):
-            builds.append([settings, options, env_vars, build_requires])
-        if settings["compiler"] == "apple-clang" and settings["build_type"] == "Release":
-            new_options = copy.copy(options)
-            new_options["libcurl:darwin_ssl"] = False
-            builds.append([settings, new_options, env_vars, build_requires])
-    builder.builds = builds
-    
+        if not (platform.system() == "Windows" and item.settings["compiler"] == "gcc" and
+                item.settings["arch"] == "x86"):
+            items.append(item)
+            # add macos builds with openssl too
+            if item.settings["compiler"] == "apple-clang" and item.settings["build_type"] == "Release":
+                new_options = copy.copy(item.options)
+                new_options["libcurl:darwin_ssl"] = False
+                items.append([item.settings, new_options, item.env_vars,
+                              item.build_requires, item.reference])
+    builder.items = items
+
     builder.run()
