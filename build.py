@@ -11,7 +11,9 @@ if __name__ == "__main__":
     # add macos builds with openssl too
     builds = []
     for settings, options, env_vars, build_requires in builder.builds:
-        builds.append([settings, options, env_vars, build_requires])
+        # skip mingw cross-builds
+        if not (platform.system() == "Windows" and settings["compiler"] == "gcc" and settings["arch"] == "x86"):
+            builds.append([settings, options, env_vars, build_requires])
         if settings["compiler"] == "apple-clang" and settings["build_type"] == "Release":
             new_options = copy.copy(options)
             new_options["libcurl:darwin_ssl"] = False
