@@ -248,17 +248,28 @@ class LibcurlConan(ConanFile):
             tools.replace_in_file("Makefile.am",
                                   'include src/Makefile.inc',
                                   '')
-
             if self.is_mingw:
                 # patch for zlib naming in mingw
                 tools.replace_in_file("configure.ac",
                                       '-lz ',
                                       '-lzlib ',
                                       strict=False)
+
                 if self.options.shared:
                     # patch for shared mingw build
-                    shutil.copy(os.path.join(self.build_folder, 'patches', 'lib_Makefile.am.new'),
-                                os.path.join(self.build_folder, self.source_subfolder, 'lib', 'Makefile.am'))
+                    tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
+                                          'noinst_LTLIBRARIES = libcurlu.la',
+                                          '')
+                    tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
+                                          'noinst_LTLIBRARIES =',
+                                          '')
+                    tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
+                                          'lib_LTLIBRARIES = libcurl.la',
+                                          'noinst_LTLIBRARIES = libcurl.la')
+                    # add directives to build dll
+                    added_content = tools.load(os.path.join(self.source_folder, 'patches', 'lib_Makefile_add.am'))
+                    tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
+
 
         self.output.warn(repr(env_build_vars))
 
