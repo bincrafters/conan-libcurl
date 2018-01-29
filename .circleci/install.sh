@@ -5,6 +5,7 @@ set -x
 
 brew update || brew update
 brew install cmake || true
+brew install libtool || true
 
 
 pip install conan --upgrade
