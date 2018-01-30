@@ -255,8 +255,7 @@ class LibcurlConan(ConanFile):
                 # patch for zlib naming in mingw
                 tools.replace_in_file("configure.ac",
                                       '-lz ',
-                                      '-lzlib ',
-                                      strict=False)
+                                      '-lzlib ')
 
                 if self.options.shared:
                     # patch for shared mingw build
