@@ -14,7 +14,7 @@ class LibcurlConan(ConanFile):
     license = "MIT"
     short_paths = True
     exports = ["LICENSE.md"]
-    exports_sources = ["FindCURL.cmake", "patches/*"]
+    exports_sources = ["FindCURL.cmake", "patches/*", "CMakeLists.txt"]
     generators = "cmake"
     source_subfolder = "source_subfolder"
     settings = "os", "arch", "compiler", "build_type"
@@ -87,6 +87,10 @@ class LibcurlConan(ConanFile):
         tools.get("https://curl.haxx.se/download/curl-%s.tar.gz" % self.version)
         os.rename("curl-%s" % self.version, self.source_subfolder)
         tools.download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem", verify=False)
+        os.rename(os.path.join(self.source_subfolder, "CMakeLists.txt"),
+                  os.path.join(self.source_subfolder, "CMakeLists_original.txt"))
+        shutil.copy("CMakeLists.txt",
+                    os.path.join(self.source_subfolder, "CMakeLists.txt"))
 
     def build(self):
         self.patch_misc_files()
@@ -329,17 +333,8 @@ class LibcurlConan(ConanFile):
 
     def patch_cmake_files(self):
         with tools.chdir(self.source_subfolder):
-            # add conan magic lines
-            tools.replace_in_file("CMakeLists.txt",
-                    "cmake_minimum_required(VERSION 2.8 FATAL_ERROR)",
-                    '''cmake_minimum_required(VERSION 3.0)
-                    project(CURL)
-                    include(../conanbuildinfo.cmake)
-                    conan_basic_setup()
-                    '''
-            )
             tools.replace_in_file(
-                "CMakeLists.txt",
+                "CMakeLists_original.txt",
                 "include(CurlSymbolHiding)",
                 ""
             )
