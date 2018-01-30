@@ -342,6 +342,7 @@ class LibcurlConan(ConanFile):
     def build_with_cmake(self):
         cmake = CMake(self)
         cmake.definitions['BUILD_TESTING'] = False
+        cmake.definitions['BUILD_CURL_EXE'] = False
         cmake.definitions['CURL_DISABLE_LDAP'] = not self.options.with_ldap
         cmake.definitions['BUILD_SHARED_LIBS'] = self.options.shared
         cmake.definitions['CURL_STATICLIB'] = not self.options.shared
