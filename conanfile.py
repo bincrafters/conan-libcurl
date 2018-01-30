@@ -157,10 +157,12 @@ class LibcurlConan(ConanFile):
                 'set(CURL_VERSION_STRING "%s")' % self.version)
 
         # temporary workaround for DEBUG_POSTFIX (curl issues #1796, #2121)
-        tools.replace_in_file(
-                os.path.join(self.source_subfolder, 'lib', 'CMakeLists.txt'),
-                '  DEBUG_POSTFIX "-d"',
-                '  DEBUG_POSTFIX ""', strict=False)
+        # introduced in 7.55.0
+        if self.version_components[0] == 7 and self.version_components[1] >= 55:
+            tools.replace_in_file(
+                    os.path.join(self.source_subfolder, 'lib', 'CMakeLists.txt'),
+                    '  DEBUG_POSTFIX "-d"',
+                    '  DEBUG_POSTFIX ""')
 
     def get_configure_command_suffix(self):
         suffix = ''
