@@ -37,11 +37,15 @@ class LibcurlConan(ConanFile):
                        "with_libmetalink=False", "with_largemaxwritesize=False",
                        "with_libpsl=False", "with_nghttp2=False")
 
-    is_mingw = None
+    @property
+    def is_mingw(self):
+        return self.settings.os == "Windows" and self.settings.compiler != "Visual Studio"
+
+    @property
+    def version_components(self):
+        return [int(x) for x in self.version.split('.')]
 
     def config_options(self):
-        version_components = self.version.split('.')
-
         del self.settings.compiler.libcxx
         if self.options.with_openssl:
             # enforce shared linking due to openssl dependency
@@ -58,7 +62,7 @@ class LibcurlConan(ConanFile):
                 pass
 
         # libpsl is supported for libcurl >= 7.46.0
-        use_libpsl = int(version_components[0]) == 7 and int(version_components[1]) >= 46
+        use_libpsl = self.version_components[0] == 7 and self.version_components[1] >= 46
         if not use_libpsl:
             self.options.remove('with_libpsl')
 
@@ -85,8 +89,6 @@ class LibcurlConan(ConanFile):
         tools.download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem", verify=False)
 
     def build(self):
-        self.is_mingw = self.settings.os == "Windows" and self.settings.compiler != "Visual Studio"
-
         self.patch_misc_files()
         if self.settings.compiler != "Visual Studio":
             self.build_with_autotools()
@@ -161,9 +163,8 @@ class LibcurlConan(ConanFile):
                 '  DEBUG_POSTFIX ""', strict=False)
 
     def get_configure_command_suffix(self):
-        version_components = self.version.split('.')
         suffix = ''
-        use_idn2 = int(version_components[0]) == 7 and int(version_components[1]) >= 53
+        use_idn2 = self.version_components[0] == 7 and self.version_components[1] >= 53
         if use_idn2:
             suffix += " --without-libidn2 " if not self.options.with_libidn else " --with-libidn2 "
         else:
