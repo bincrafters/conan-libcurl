@@ -14,11 +14,11 @@ class LibcurlConan(ConanFile):
     license = "MIT"
     short_paths = True
     exports = ["LICENSE.md"]
-    exports_sources = ["FindCURL.cmake", "patches/*", "CMakeLists.txt"]
+    exports_sources = ["FindCURL.cmake", "lib_Makefile_add.am", "CMakeLists.txt"]
     generators = "cmake"
     source_subfolder = "source_subfolder"
     settings = "os", "arch", "compiler", "build_type"
-    options = {"shared": [True, False], # SHARED IN LINUX IS HAVING PROBLEMS WITH LIBEFENCE
+    options = {"shared": [True, False],
                "with_openssl": [True, False],
                "disable_threads": [True, False],
                "with_ldap": [True, False],
@@ -97,7 +97,6 @@ class LibcurlConan(ConanFile):
         if self.settings.compiler != "Visual Studio":
             self.build_with_autotools()
         else:
-            self.patch_cmake_files()
             self.build_with_cmake()
 
     def package(self):
@@ -137,7 +136,6 @@ class LibcurlConan(ConanFile):
                 if self.options.with_ldap:
                     self.cpp_info.libs.extend(["ldap"])
                 if self.options.darwin_ssl:
-                    # self.cpp_info.libs.extend(["/System/Library/Frameworks/Cocoa.framework", "/System/Library/Frameworks/Security.framework"])
                     self.cpp_info.exelinkflags.append("-framework Cocoa")
                     self.cpp_info.exelinkflags.append("-framework Security")
                     self.cpp_info.sharedlinkflags = self.cpp_info.exelinkflags
@@ -152,23 +150,20 @@ class LibcurlConan(ConanFile):
 
     def patch_misc_files(self):
         if self.options.with_largemaxwritesize:
-            tools.replace_in_file(
-                  os.path.join(self.source_subfolder, 'include', 'curl', 'curl.h'),
-                  "define CURL_MAX_WRITE_SIZE 16384",
-                  "define CURL_MAX_WRITE_SIZE 10485760")
+            tools.replace_in_file(os.path.join(self.source_subfolder, 'include', 'curl', 'curl.h'),
+                                  "define CURL_MAX_WRITE_SIZE 16384",
+                                  "define CURL_MAX_WRITE_SIZE 10485760")
 
-        tools.replace_in_file(
-                'FindCURL.cmake',
-                'set(CURL_VERSION_STRING "0")',
-                'set(CURL_VERSION_STRING "%s")' % self.version)
+        tools.replace_in_file('FindCURL.cmake',
+                              'set(CURL_VERSION_STRING "0")',
+                              'set(CURL_VERSION_STRING "%s")' % self.version)
 
         # temporary workaround for DEBUG_POSTFIX (curl issues #1796, #2121)
         # introduced in 7.55.0
         if self.version_components[0] == 7 and self.version_components[1] >= 55:
-            tools.replace_in_file(
-                    os.path.join(self.source_subfolder, 'lib', 'CMakeLists.txt'),
-                    '  DEBUG_POSTFIX "-d"',
-                    '  DEBUG_POSTFIX ""')
+            tools.replace_in_file(os.path.join(self.source_subfolder, 'lib', 'CMakeLists.txt'),
+                                  '  DEBUG_POSTFIX "-d"',
+                                  '  DEBUG_POSTFIX ""')
 
     def get_configure_command_suffix(self):
         suffix = ''
@@ -266,7 +261,7 @@ class LibcurlConan(ConanFile):
                                       'lib_LTLIBRARIES = libcurl.la',
                                       'noinst_LTLIBRARIES = libcurl.la')
                 # add directives to build dll
-                added_content = tools.load(os.path.join(self.source_folder, 'patches', 'lib_Makefile_add.am'))
+                added_content = tools.load(os.path.join(self.source_folder, 'lib_Makefile_add.am'))
                 tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
 
 
@@ -311,11 +306,7 @@ class LibcurlConan(ConanFile):
                     self.run('./buildconf', win_bash=self.is_mingw)
 
                     # fix generated autotools files
-                    tools.replace_in_file(
-                        "configure",
-                        "-install_name \\$rpath/",
-                        "-install_name "
-                    )
+                    tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
                     # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
                     # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
                     if self.version_components[0] == 7 and self.version_components[1] < 55:
@@ -329,15 +320,13 @@ class LibcurlConan(ConanFile):
                     self.run("make %s" % make_suffix, win_bash=self.is_mingw)
                     self.run("make %s install" % make_suffix, win_bash=self.is_mingw)
 
-    def patch_cmake_files(self):
-        with tools.chdir(self.source_subfolder):
-            tools.replace_in_file(
-                "CMakeLists_original.txt",
-                "include(CurlSymbolHiding)",
-                ""
-            )
-
     def build_with_cmake(self):
+        # patch cmake files
+        with tools.chdir(self.source_subfolder):
+            tools.replace_in_file("CMakeLists_original.txt",
+                                  "include(CurlSymbolHiding)",
+                                  "")
+
         cmake = CMake(self)
         cmake.definitions['BUILD_TESTING'] = False
         cmake.definitions['BUILD_CURL_EXE'] = False
