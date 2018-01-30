@@ -246,9 +246,9 @@ class LibcurlConan(ConanFile):
         with tools.chdir(self.source_subfolder):
 
             # Do not compile curl tool, just library
-            tools.replace_in_file("Makefile.am",
-                                  'SUBDIRS = lib src include',
-                                  'SUBDIRS = lib include')
+            #tools.replace_in_file("Makefile.am",
+            #                      'SUBDIRS = lib src include',
+            #                      'SUBDIRS = lib include')
 
             tools.replace_in_file("Makefile.am",
                                   'include src/Makefile.inc',
