@@ -227,6 +227,47 @@ class LibcurlConan(ConanFile):
 
         return suffix
 
+    def patch_mingw_files(self):
+        if not self.is_mingw:
+            return
+        # patch autotools files
+        with tools.chdir(self.source_subfolder):
+            # for mingw builds - do not compile curl tool, just library
+            # linking errors are much harder to fix than to exclude curl tool
+            if self.version_components[0] == 7 and self.version_components[1] >= 55:
+                tools.replace_in_file("Makefile.am",
+                                      'SUBDIRS = lib src',
+                                      'SUBDIRS = lib')
+            else:
+                tools.replace_in_file("Makefile.am",
+                                      'SUBDIRS = lib src include',
+                                      'SUBDIRS = lib include')
+
+            tools.replace_in_file("Makefile.am",
+                                  'include src/Makefile.inc',
+                                  '')
+
+            # patch for zlib naming in mingw
+            tools.replace_in_file("configure.ac",
+                                  '-lz ',
+                                  '-lzlib ')
+
+            if self.options.shared:
+                # patch for shared mingw build
+                tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
+                                      'noinst_LTLIBRARIES = libcurlu.la',
+                                      '')
+                tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
+                                      'noinst_LTLIBRARIES =',
+                                      '')
+                tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
+                                      'lib_LTLIBRARIES = libcurl.la',
+                                      'noinst_LTLIBRARIES = libcurl.la')
+                # add directives to build dll
+                added_content = tools.load(os.path.join(self.source_folder, 'patches', 'lib_Makefile_add.am'))
+                tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
+
+
     def build_with_autotools(self):
 
         configure_suffix = self.get_configure_command_suffix()
@@ -235,6 +276,9 @@ class LibcurlConan(ConanFile):
 
         # tweaks for mingw
         if self.is_mingw:
+            # patch autotools files
+            self.patch_mingw_files()
+
             env_build.defines.append('_AMD64_')
             env_build_vars['RCFLAGS'] = '-O COFF'
             if self.settings.arch == "x86":
@@ -243,39 +287,6 @@ class LibcurlConan(ConanFile):
                 env_build_vars['RCFLAGS'] += ' --target=pe-x86-64'
 
             del env_build_vars['LIBS']
-
-        # patch autotools files
-        with tools.chdir(self.source_subfolder):
-
-            # Do not compile curl tool, just library
-            #tools.replace_in_file("Makefile.am",
-            #                      'SUBDIRS = lib src include',
-            #                      'SUBDIRS = lib include')
-
-            tools.replace_in_file("Makefile.am",
-                                  'include src/Makefile.inc',
-                                  '')
-            if self.is_mingw:
-                # patch for zlib naming in mingw
-                tools.replace_in_file("configure.ac",
-                                      '-lz ',
-                                      '-lzlib ')
-
-                if self.options.shared:
-                    # patch for shared mingw build
-                    tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
-                                          'noinst_LTLIBRARIES = libcurlu.la',
-                                          '')
-                    tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
-                                          'noinst_LTLIBRARIES =',
-                                          '')
-                    tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
-                                          'lib_LTLIBRARIES = libcurl.la',
-                                          'noinst_LTLIBRARIES = libcurl.la')
-                    # add directives to build dll
-                    added_content = tools.load(os.path.join(self.source_folder, 'patches', 'lib_Makefile_add.am'))
-                    tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
-
 
         self.output.warn(repr(env_build_vars))
 
@@ -305,7 +316,6 @@ class LibcurlConan(ConanFile):
                     )
                     # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
                     # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
-                    # so just ignore it if not matched
                     if self.version_components[0] == 7 and self.version_components[1] < 55:
                         tools.replace_in_file(
                             "configure",
