@@ -339,20 +339,6 @@ class LibcurlConan(ConanFile):
                 ""
             )
 
-        # Do not compile curl tool, just library
-        with tools.chdir(os.path.join(self.source_subfolder, "src")):
-            tools.replace_in_file(
-                "CMakeLists.txt",
-                "add_executable(",
-                "IF(0)\n add_executable("
-            )
-
-            tools.replace_in_file(
-                "CMakeLists.txt",
-                "install(TARGETS ${EXE_NAME} DESTINATION bin)",
-                "ENDIF()"
-            )
-
     def build_with_cmake(self):
         cmake = CMake(self)
         cmake.definitions['BUILD_TESTING'] = False
