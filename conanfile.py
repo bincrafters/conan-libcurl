@@ -113,6 +113,8 @@ class LibcurlConan(ConanFile):
 
         # no need to distribute docs/man pages
         shutil.rmtree(os.path.join(self.package_folder, 'share', 'man'), ignore_errors=True)
+        # no need for bin tools
+        shutil.rmtree(os.path.join(self.package_folder, 'bin'), ignore_errors=True)
 
     def package_info(self):
         if self.settings.compiler != "Visual Studio":
