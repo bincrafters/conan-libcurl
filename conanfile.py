@@ -114,7 +114,9 @@ class LibcurlConan(ConanFile):
         # no need to distribute docs/man pages
         shutil.rmtree(os.path.join(self.package_folder, 'share', 'man'), ignore_errors=True)
         # no need for bin tools
-        shutil.rmtree(os.path.join(self.package_folder, 'bin'), ignore_errors=True)
+        for binname in ['curl', 'curl.exe', 'curl-config']:
+            if os.path.isfile(os.path.join(self.package_folder, 'bin', binname)):
+                os.remove(os.path.join(self.package_folder, 'bin', binname))
 
     def package_info(self):
         if self.settings.compiler != "Visual Studio":
