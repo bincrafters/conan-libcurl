@@ -301,10 +301,11 @@ class LibcurlConan(ConanFile):
                     # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
                     # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
                     # so just ignore it if not matched
-                    tools.replace_in_file(
-                        "configure",
-                        'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
-                        'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"', strict=False)
+                    if self.version_components[0] == 7 and self.version_components[1] < 55:
+                        tools.replace_in_file(
+                            "configure",
+                            'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
+                            'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"')
 
                     self.run("chmod +x configure")
                     self.run("./configure " + configure_suffix, win_bash=self.is_mingw)
