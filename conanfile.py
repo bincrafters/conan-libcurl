@@ -8,7 +8,7 @@ import shutil
 
 class LibcurlConan(ConanFile):
     name = "libcurl"
-    version = "7.52.1"
+    version = "7.56.1"
     description = "command line tool and library for transferring data with URLs"
     url = "http://github.com/bincrafters/conan-libcurl"
     license = "MIT"
