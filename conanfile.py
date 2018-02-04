@@ -117,7 +117,7 @@ class LibcurlConan(ConanFile):
         # no need to distribute docs/man pages
         shutil.rmtree(os.path.join(self.package_folder, 'share', 'man'), ignore_errors=True)
         # no need for bin tools
-        for binname in ['curl', 'curl.exe', 'curl-config']:
+        for binname in ['curl', 'curl.exe']:
             if os.path.isfile(os.path.join(self.package_folder, 'bin', binname)):
                 os.remove(os.path.join(self.package_folder, 'bin', binname))
 
