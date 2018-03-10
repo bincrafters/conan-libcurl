@@ -11,6 +11,7 @@ class LibcurlConan(ConanFile):
     version = "7.52.1"
     description = "command line tool and library for transferring data with URLs"
     url = "http://github.com/bincrafters/conan-libcurl"
+    homepage = "http://curl.haxx.se"
     license = "MIT"
     short_paths = True
     exports = ["LICENSE.md"]
