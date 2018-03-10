@@ -70,14 +70,12 @@ class LibcurlConan(ConanFile):
     def requirements(self):
         if self.options.with_openssl:
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
-                self.requires.add("OpenSSL/[>1.0.2a,<1.0.3]@conan/stable", private=False)
-            elif self.settings.os == "Macos" and self.options.darwin_ssl:
-                self.requires.add("zlib/[~=1.2]@conan/stable", private=False)
+                self.requires.add("OpenSSL/1.0.2n@conan/stable")
         if self.options.with_libssh2:
             if self.settings.compiler != "Visual Studio":
-                self.requires.add("libssh2/[~=1.8]@bincrafters/stable", private=False)
+                self.requires.add("libssh2/1.8.0@bincrafters/stable")
 
-        self.requires.add("zlib/[~=1.2]@conan/stable", private=False)
+        self.requires.add("zlib/1.2.11@conan/stable")
 
     def source(self):
         tools.get("https://curl.haxx.se/download/curl-%s.tar.gz" % self.version)
