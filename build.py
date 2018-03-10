@@ -21,8 +21,9 @@ if __name__ == "__main__":
                 new_build_requires["*"] = new_build_requires.get("*", []) + \
                     ["mingw_installer/1.0@conan/stable",
                      "msys2_installer/latest@bincrafters/stable"]
-                items.append([item.settings, item.options, item.env_vars,
-                              new_build_requires, item.reference])
+
+            items.append([item.settings, item.options, item.env_vars,
+                          new_build_requires, item.reference])
             # add macos builds with openssl too
             if item.settings["compiler"] == "apple-clang" and item.settings["build_type"] == "Release":
                 new_options = copy.copy(item.options)
