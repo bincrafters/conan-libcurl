@@ -46,8 +46,10 @@ class LibcurlConan(ConanFile):
     def version_components(self):
         return [int(x) for x in self.version.split('.')]
 
-    def config_options(self):
+    def configure(self):
         del self.settings.compiler.libcxx
+
+    def config_options(self):
         if self.options.with_openssl:
             # enforce shared linking due to openssl dependency
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
