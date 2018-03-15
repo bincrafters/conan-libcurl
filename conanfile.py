@@ -13,13 +13,13 @@ class LibcurlConan(ConanFile):
     url = "http://github.com/bincrafters/conan-libcurl"
     homepage = "http://curl.haxx.se"
     license = "MIT"
-    short_paths = True
     exports = ["LICENSE.md"]
     exports_sources = ["FindCURL.cmake", "lib_Makefile_add.am", "CMakeLists.txt"]
     generators = "cmake"
     source_subfolder = "source_subfolder"
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False],
+               "fPIC": [True, False],
                "with_openssl": [True, False],
                "disable_threads": [True, False],
                "with_ldap": [True, False],
@@ -32,7 +32,7 @@ class LibcurlConan(ConanFile):
                "with_libpsl": [True, False],
                "with_largemaxwritesize": [True, False],
                "with_nghttp2": [True, False]}
-    default_options = ("shared=False", "with_openssl=True", "disable_threads=False",
+    default_options = ("shared=False", "fPIC=True", "with_openssl=True", "disable_threads=False",
                        "with_ldap=False", "custom_cacert=False", "darwin_ssl=True",
                        "with_libssh2=False", "with_libidn=False", "with_librtmp=False",
                        "with_libmetalink=False", "with_largemaxwritesize=False",
@@ -46,8 +46,10 @@ class LibcurlConan(ConanFile):
     def version_components(self):
         return [int(x) for x in self.version.split('.')]
 
-    def config_options(self):
+    def configure(self):
         del self.settings.compiler.libcxx
+
+    def config_options(self):
         if self.options.with_openssl:
             # enforce shared linking due to openssl dependency
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
@@ -66,6 +68,9 @@ class LibcurlConan(ConanFile):
         use_libpsl = self.version_components[0] == 7 and self.version_components[1] >= 46
         if not use_libpsl:
             self.options.remove('with_libpsl')
+
+        if self.settings.os == "Windows":
+            self.options.remove("fPIC")
 
     def requirements(self):
         if self.options.with_openssl:
@@ -279,7 +284,10 @@ class LibcurlConan(ConanFile):
 
             del env_build_vars['LIBS']
 
-        self.output.warn(repr(env_build_vars))
+        self.output.info(repr(env_build_vars))
+
+        if self.settings.os != "Windows":
+            env_build.fpic = self.options.fPIC
 
         with tools.environment_append(env_build_vars):
             # temporary fix for xcode9
@@ -292,7 +300,7 @@ class LibcurlConan(ConanFile):
             env_run = RunEnvironment(self)
             # run configure with *LD_LIBRARY_PATH env vars
             # it allows to pick up shared openssl
-            self.output.warn(repr(env_run.vars))
+            self.output.info(repr(env_run.vars))
             with tools.environment_append(env_run.vars):
 
                 with tools.chdir(self.source_subfolder):
@@ -329,6 +337,8 @@ class LibcurlConan(ConanFile):
         cmake.definitions['CURL_STATICLIB'] = not self.options.shared
         cmake.definitions['CMAKE_DEBUG_POSTFIX'] = ''
         cmake.definitions['CMAKE_USE_LIBSSH2'] = self.options.with_libssh2
+        if self.settings.compiler != 'Visual Studio':
+            cmake.definitions['CMAKE_POSITION_INDEPENDENT_CODE'] = self.options.fPIC
         cmake.configure(source_dir=self.source_subfolder)
         cmake.build()
         cmake.install()
