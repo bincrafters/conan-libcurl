@@ -285,7 +285,7 @@ class LibcurlConan(ConanFile):
 
             del env_build_vars['LIBS']
 
-        self.output.warn(repr(env_build_vars))
+        self.output.info(repr(env_build_vars))
 
         if self.settings.os != "Windows":
             env_build.fpic = self.options.fPIC
@@ -301,7 +301,7 @@ class LibcurlConan(ConanFile):
             env_run = RunEnvironment(self)
             # run configure with *LD_LIBRARY_PATH env vars
             # it allows to pick up shared openssl
-            self.output.warn(repr(env_run.vars))
+            self.output.info(repr(env_run.vars))
             with tools.environment_append(env_run.vars):
 
                 with tools.chdir(self.source_subfolder):
