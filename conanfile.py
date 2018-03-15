@@ -13,7 +13,6 @@ class LibcurlConan(ConanFile):
     url = "http://github.com/bincrafters/conan-libcurl"
     homepage = "http://curl.haxx.se"
     license = "MIT"
-    short_paths = True
     exports = ["LICENSE.md"]
     exports_sources = ["FindCURL.cmake", "lib_Makefile_add.am", "CMakeLists.txt"]
     generators = "cmake"
