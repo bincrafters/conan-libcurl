@@ -200,17 +200,16 @@ class LibcurlConan(ConanFile):
         suffix += " --without-libpsl " if not self.options.with_libpsl else " --with-libpsl "
         suffix += " --without-nghttp2 " if not self.options.with_nghttp2 else " --with-nghttp2 "
 
-        if self.settings.os != "Macos" or not self.options.darwin_ssl:
-            openssl_path = self.deps_cpp_info["OpenSSL"].rootpath.replace('\\', '/')
-
         if self.options.with_openssl:
             if self.settings.os == "Macos" and self.options.darwin_ssl:
                 suffix += "--with-darwinssl "
             else:
+                openssl_path = self.deps_cpp_info["OpenSSL"].rootpath.replace('\\', '/')
                 suffix += "--with-ssl=%s" % openssl_path
             if self.settings.os == "Windows" and self.options.with_winssl:
                 suffix += "--with-winssl "
             else:
+                openssl_path = self.deps_cpp_info["OpenSSL"].rootpath.replace('\\', '/')
                 suffix += "--with-ssl=%s" % openssl_path
         else:
             suffix += "--without-ssl "
