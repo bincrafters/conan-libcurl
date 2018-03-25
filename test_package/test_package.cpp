@@ -1,9 +1,5 @@
 #include <stdio.h>
 #include <curl/curl.h>
-#ifndef __APPLE__
-#include "openssl/md5.h"
-#include "openssl/crypto.h"
-#endif
 
 int main(void)
 {
