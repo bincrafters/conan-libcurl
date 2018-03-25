@@ -200,19 +200,15 @@ class LibcurlConan(ConanFile):
         suffix += " --without-libpsl " if not self.options.with_libpsl else " --with-libpsl "
         suffix += " --without-nghttp2 " if not self.options.with_nghttp2 else " --with-nghttp2 "
 
-        if self.options.with_openssl:
-            if self.settings.os == "Macos" and self.options.darwin_ssl:
-                suffix += "--with-darwinssl "
-            else:
-                openssl_path = self.deps_cpp_info["OpenSSL"].rootpath.replace('\\', '/')
-                suffix += "--with-ssl=%s" % openssl_path
-            if self.settings.os == "Windows" and self.options.with_winssl:
-                suffix += "--with-winssl "
-            else:
-                openssl_path = self.deps_cpp_info["OpenSSL"].rootpath.replace('\\', '/')
-                suffix += "--with-ssl=%s" % openssl_path
+        if self.settings.os == "Macos" and self.options.darwin_ssl:
+            suffix +=  "--with-darwinssl "
+        elif self.settings.os == "Windows" and self.options.with_winssl:
+            suffix += " --with-winssl "
+        elif self.options.with_openssl:
+            openssl_path = self.deps_cpp_info["OpenSSL"].rootpath.replace('\\', '/')
+            suffix += " --with-ssl=%s " % openssl_path
         else:
-            suffix += "--without-ssl "
+            suffix += " --without-ssl "
 
         if self.options.with_libssh2:
             suffix += "--with-libssh2=%s " % self.deps_cpp_info["libssh2"].lib_paths[0].replace('\\', '/')
