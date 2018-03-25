@@ -21,6 +21,7 @@ class LibcurlConan(ConanFile):
     options = {"shared": [True, False],
                "fPIC": [True, False],
                "with_openssl": [True, False],
+               "with_winssl": [True, False],
                "disable_threads": [True, False],
                "with_ldap": [True, False],
                "custom_cacert": [True, False],
@@ -32,7 +33,7 @@ class LibcurlConan(ConanFile):
                "with_libpsl": [True, False],
                "with_largemaxwritesize": [True, False],
                "with_nghttp2": [True, False]}
-    default_options = ("shared=False", "fPIC=True", "with_openssl=True", "disable_threads=False",
+    default_options = ("shared=False", "fPIC=True", "with_openssl=True", "with_winssl=False", "disable_threads=False",
                        "with_ldap=False", "custom_cacert=False", "darwin_ssl=True",
                        "with_libssh2=False", "with_libidn=False", "with_librtmp=False",
                        "with_libmetalink=False", "with_largemaxwritesize=False",
@@ -50,6 +51,13 @@ class LibcurlConan(ConanFile):
         del self.settings.compiler.libcxx
 
     def config_options(self):
+        # be careful with those flags:
+        # - with_openssl AND darwin_ssl uses darwin_ssl (to maintain recipe compatibilty)
+        # - with_openssl AND NOT darwin_ssl uses openssl
+        # - with_openssl AND with_winssl raises to error
+        # - with_openssl AND NOT with_winssl uses openssl
+        # Moreover darwin_ssl is set by default and with_winssl is not
+
         if self.options.with_openssl:
             # enforce shared linking due to openssl dependency
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
@@ -63,6 +71,14 @@ class LibcurlConan(ConanFile):
                 self.options.remove("darwin_ssl")
             except:
                 pass
+        if self.settings.os != "Windows":
+            try:
+                self.options.remove("with_winssl")
+            except:
+                pass
+
+        if self.settings.os == "Windows" and self.options.with_winssl and self.options.with_openssl:
+            raise Exception('Specify only with_winssl or with_openssl')
 
         # libpsl is supported for libcurl >= 7.46.0
         use_libpsl = self.version_components[0] == 7 and self.version_components[1] >= 46
@@ -74,7 +90,15 @@ class LibcurlConan(ConanFile):
 
     def requirements(self):
         if self.options.with_openssl:
-            if self.settings.os != "Macos" or not self.options.darwin_ssl:
+            # libcurl before 7.56.0 supported openssl only experimentally on Windows (cmake). warn about it
+            if self.settings.os == "Windows" and self.version_components[1] < 56:
+                self.output.warn("OpenSSL is supported experimentally, use at your own risk")
+
+            if self.settings.os == "Macos" and self.options.darwin_ssl:
+                pass
+            elif self.settings.os == "Windows" and self.options.with_winssl:
+                pass
+            else:
                 self.requires.add("OpenSSL/1.0.2n@conan/stable")
         if self.options.with_libssh2:
             if self.settings.compiler != "Visual Studio":
@@ -182,6 +206,10 @@ class LibcurlConan(ConanFile):
         if self.options.with_openssl:
             if self.settings.os == "Macos" and self.options.darwin_ssl:
                 suffix += "--with-darwinssl "
+            else:
+                suffix += "--with-ssl=%s" % openssl_path
+            if self.settings.os == "Windows" and self.options.with_winssl:
+                suffix += "--with-winssl "
             else:
                 suffix += "--with-ssl=%s" % openssl_path
         else:
@@ -337,6 +365,12 @@ class LibcurlConan(ConanFile):
         cmake.definitions['CURL_STATICLIB'] = not self.options.shared
         cmake.definitions['CMAKE_DEBUG_POSTFIX'] = ''
         cmake.definitions['CMAKE_USE_LIBSSH2'] = self.options.with_libssh2
+
+        # all these options are exclusive. set just one of them
+        # mac builds do not use cmake so don't even bother about darwin_ssl
+        cmake.definitions['CMAKE_USE_WINSSL'] = 'with_winssl' in self.options and self.options.with_winssl
+        cmake.definitions['CMAKE_USE_OPENSSL'] = 'with_openssl' in self.options and self.options.with_openssl
+
         if self.settings.compiler != 'Visual Studio':
             cmake.definitions['CMAKE_POSITION_INDEPENDENT_CODE'] = self.options.fPIC
         cmake.configure(source_dir=self.source_subfolder)
