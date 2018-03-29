@@ -30,7 +30,7 @@ class TestPackageConan(ConanFile):
                     self.run("LD_LIBRARY_PATH=%s %s" % (os.environ.get('LD_LIBRARY_PATH', ''), bin_path))
 
     def test_arm(self):
-        file_ext = "so.4.5.0" if self.options["libcurl"].shared else "a"
+        file_ext = "so.4.4.0" if self.options["libcurl"].shared else "a"
         lib_path = os.path.join(self.deps_cpp_info["libcurl"].libdirs[0], "libcurl.%s" % file_ext)
         output = subprocess.check_output(["readelf", "-h", lib_path]).decode()
         assert re.search(r"Machine:\s+ARM", output)
