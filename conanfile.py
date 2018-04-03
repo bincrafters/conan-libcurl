@@ -203,8 +203,10 @@ class LibcurlConan(ConanFile):
 
         if self.settings.os == "Macos" and self.options.darwin_ssl:
             params.append("--with-darwinssl")
+            params.append("--without-ssl")
         elif self.settings.os == "Windows" and self.options.with_winssl:
             params.append("--with-winssl")
+            params.append("--without-ssl")
         elif self.options.with_openssl:
             openssl_path = self.deps_cpp_info["OpenSSL"].rootpath.replace('\\', '/')
             params.append("--with-ssl=%s" % openssl_path)
