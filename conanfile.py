@@ -254,8 +254,8 @@ class LibcurlConan(ConanFile):
         return " ".join(params)
 
     def get_linux_arm_host(self):
-        arch = '%s-linux-gnu' % self.settings.arch
-        if self.settings.os == 'linux':
+        arch = None
+        if self.settings.os == 'Linux':
             arch = 'arm-linux-gnu'
             # aarch64 could be added by user
             if 'aarch64' in self.settings.arch:
