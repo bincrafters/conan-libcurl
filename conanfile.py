@@ -264,7 +264,7 @@ class LibcurlConan(ConanFile):
                 arch = 'aarch64-linux-gnu'
             elif 'arm' in self.settings.arch and 'hf' in self.settings.arch:
                 arch = 'arm-linux-gnueabihf'
-            elif 'arm' in self.settings.arch and self.arm_version(self.settings.arch) > 4:
+            elif 'arm' in self.settings.arch and self.arm_version(str(self.settings.arch)) > 4:
                 arch = 'arm-linux-gnueabi'
         return arch
 
