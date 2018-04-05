@@ -3,6 +3,7 @@
 
 from conans import ConanFile, AutoToolsBuildEnvironment, RunEnvironment, CMake, tools
 import os
+import re
 import shutil
 
 
@@ -253,6 +254,26 @@ class LibcurlConan(ConanFile):
                 params.append('--host=arm-linux-gnu')
 
         return " ".join(params)
+
+    def get_linux_arm_host(self):
+        arch = None
+        if self.settings.os == 'Linux':
+            arch = 'arm-linux-gnu'
+            # aarch64 could be added by user
+            if 'aarch64' in self.settings.arch:
+                arch = 'aarch64-linux-gnu'
+            elif 'arm' in self.settings.arch and 'hf' in self.settings.arch:
+                arch = 'arm-linux-gnueabihf'
+            elif 'arm' in self.settings.arch and self.arm_version(str(self.settings.arch)) > 4:
+                arch = 'arm-linux-gnueabi'
+        return arch
+
+    def arm_version(self, arch):
+        version = None
+        match = re.match(r"arm\w*(\d)", arch)
+        if match:
+            version = int(match.group(1))
+        return version
 
     def patch_mingw_files(self):
         if not self.is_mingw:
