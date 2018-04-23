@@ -251,7 +251,7 @@ class LibcurlConan(ConanFile):
         # Cross building flags
         if tools.cross_building(self.settings):
             if self.settings.os == "Linux" and "arm" in self.settings.arch:
-                params.append('--host=arm-linux-gnu')
+                params.append('--host=%s' % self.get_linux_arm_host())
 
         return " ".join(params)
 
