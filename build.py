@@ -10,6 +10,9 @@ if __name__ == "__main__":
 
     builder = build_template_default.get_builder(pure_c=True)
 
+    if platform.system() == "Linux" and "arm" in builder.items[0].settings["arch"]:
+        builder = build_template_default.get_builder(args=["--build missing"], pure_c=True)
+
     items = []
     for item in builder.items:
         # skip mingw cross-builds
@@ -31,8 +34,5 @@ if __name__ == "__main__":
                 items.append([item.settings, new_options, item.env_vars,
                               new_build_requires, item.reference])
     builder.items = items
-
-    if platform.system() == "Linux" and "arm" in builder.items[0].settings["arch"]:
-        builder = build_template_default.get_builder(args="--build missing", pure_c=True)
 
     builder.run()
