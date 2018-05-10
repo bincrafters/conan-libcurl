@@ -11,7 +11,7 @@ osx: &osx
 matrix:
    include:
       - <<: *linux
-        env: CONAN_GCC_VERSIONS=7 CONAN_ARCHS=armv7 CONAN_DOCKER_IMAGE=lasote/conangcc7-armv7 CONAN_BUILD_TYPES=Release
+        env: CONAN_GCC_VERSIONS=7 CONAN_ARCHS=armv7 CONAN_DOCKER_IMAGE=lasote/conangcc7-armv7 CONAN_BUILD_TYPES=Release CONAN_BUILD_POLICY=missing
       - <<: *linux
         env: CONAN_GCC_VERSIONS=4.9 CONAN_DOCKER_IMAGE=lasote/conangcc49
       - <<: *linux

@@ -33,6 +33,6 @@ if __name__ == "__main__":
     builder.items = items
 
     if platform.system() == "Linux" and "arm" in builder.items[0].settings["arch"]:
-        builder = build_template_default.get_builder(args="--build missing", pure_c=True)
+        builder = build_template_default.get_builder(pure_c=True)
 
     builder.run()
