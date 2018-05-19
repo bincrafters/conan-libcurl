@@ -3,6 +3,7 @@
 
 from conans import ConanFile, AutoToolsBuildEnvironment, RunEnvironment, CMake, tools
 import os
+import re
 import shutil
 
 
@@ -51,6 +52,7 @@ class LibcurlConan(ConanFile):
         del self.settings.compiler.libcxx
 
     def config_options(self):
+
         # be careful with those flags:
         # - with_openssl AND darwin_ssl uses darwin_ssl (to maintain recipe compatibilty)
         # - with_openssl AND NOT darwin_ssl uses openssl
@@ -189,62 +191,89 @@ class LibcurlConan(ConanFile):
                                   '  DEBUG_POSTFIX ""')
 
     def get_configure_command_suffix(self):
-        suffix = ''
+        params = []
         use_idn2 = self.version_components[0] == 7 and self.version_components[1] >= 53
         if use_idn2:
-            suffix += " --without-libidn2 " if not self.options.with_libidn else " --with-libidn2 "
+            params.append("--without-libidn2" if not self.options.with_libidn else "--with-libidn2")
         else:
-            suffix += " --without-libidn " if not self.options.with_libidn else " --with-libidn "
-        suffix += " --without-librtmp " if not self.options.with_librtmp else " --with-librtmp "
-        suffix += " --without-libmetalink " if not self.options.with_libmetalink else " --with-libmetalink "
-        suffix += " --without-libpsl " if not self.options.with_libpsl else " --with-libpsl "
-        suffix += " --without-nghttp2 " if not self.options.with_nghttp2 else " --with-nghttp2 "
+            params.append("--without-libidn" if not self.options.with_libidn else "--with-libidn")
+        params.append("--without-librtmp" if not self.options.with_librtmp else "--with-librtmp")
+        params.append("--without-libmetalink" if not self.options.with_libmetalink else "--with-libmetalink")
+        params.append("--without-libpsl" if not self.options.with_libpsl else "--with-libpsl")
+        params.append("--without-nghttp2" if not self.options.with_nghttp2 else "--with-nghttp2")
 
         if self.settings.os == "Macos" and self.options.darwin_ssl:
-            suffix +=  "--with-darwinssl "
+            params.append("--with-darwinssl")
+            params.append("--without-ssl")
         elif self.settings.os == "Windows" and self.options.with_winssl:
-            suffix += " --with-winssl "
+            params.append("--with-winssl")
+            params.append("--without-ssl")
         elif self.options.with_openssl:
             openssl_path = self.deps_cpp_info["OpenSSL"].rootpath.replace('\\', '/')
-            suffix += " --with-ssl=%s " % openssl_path
+            params.append("--with-ssl=%s" % openssl_path)
         else:
-            suffix += " --without-ssl "
+            params.append("--without-ssl")
 
         if self.options.with_libssh2:
-            suffix += "--with-libssh2=%s " % self.deps_cpp_info["libssh2"].lib_paths[0].replace('\\', '/')
+            params.append("--with-libssh2=%s " % self.deps_cpp_info["libssh2"].lib_paths[0].replace('\\', '/'))
         else:
-            suffix += " --without-libssh2 "
+            params.append("--without-libssh2")
 
-        suffix += "--with-zlib=%s " % self.deps_cpp_info["zlib"].lib_paths[0].replace('\\', '/')
+        params.append("--with-zlib=%s " % self.deps_cpp_info["zlib"].lib_paths[0].replace('\\', '/'))
 
         if not self.options.shared:
-            suffix += " --disable-shared"
-            suffix += " --enable-static"
+            params.append("--disable-shared")
+            params.append("--enable-static")
         else:
-            suffix += " --enable-shared"
-            suffix += " --disable-static"
+            params.append("--enable-shared")
+            params.append("--disable-static")
 
         if self.options.disable_threads:
-            suffix += " --disable-thread"
+            params.append("--disable-thread")
 
         if not self.options.with_ldap:
-            suffix += " --disable-ldap"
+            params.append("--disable-ldap")
 
         if self.options.custom_cacert:
-            suffix += ' --with-ca-bundle=cacert.pem'
+            params.append('--with-ca-bundle=cacert.pem')
 
-        suffix += ' --prefix=%s' % self.package_folder.replace('\\', '/')
+        params.append('--prefix=%s' % self.package_folder.replace('\\', '/'))
 
         # for mingw
         if self.is_mingw:
             if self.settings.arch == "x86_64":
-                suffix += ' --build=x86_64-w64-mingw32'
-                suffix += ' --host=x86_64-w64-mingw32'
+                params.append('--build=x86_64-w64-mingw32')
+                params.append('--host=x86_64-w64-mingw32')
             if self.settings.arch == "x86":
-                suffix += ' --build=i686-w64-mingw32'
-                suffix += ' --host=i686-w64-mingw32'
+                params.append('--build=i686-w64-mingw32')
+                params.append('--host=i686-w64-mingw32')
 
-        return suffix
+        # Cross building flags
+        if tools.cross_building(self.settings):
+            if self.settings.os == "Linux" and "arm" in self.settings.arch:
+                params.append('--host=%s' % self.get_linux_arm_host())
+
+        return " ".join(params)
+
+    def get_linux_arm_host(self):
+        arch = None
+        if self.settings.os == 'Linux':
+            arch = 'arm-linux-gnu'
+            # aarch64 could be added by user
+            if 'aarch64' in self.settings.arch:
+                arch = 'aarch64-linux-gnu'
+            elif 'arm' in self.settings.arch and 'hf' in self.settings.arch:
+                arch = 'arm-linux-gnueabihf'
+            elif 'arm' in self.settings.arch and self.arm_version(str(self.settings.arch)) > 4:
+                arch = 'arm-linux-gnueabi'
+        return arch
+
+    def arm_version(self, arch):
+        version = None
+        match = re.match(r"arm\w*(\d)", arch)
+        if match:
+            version = int(match.group(1))
+        return version
 
     def patch_mingw_files(self):
         if not self.is_mingw:
@@ -285,7 +314,6 @@ class LibcurlConan(ConanFile):
                 # add directives to build dll
                 added_content = tools.load(os.path.join(self.source_folder, 'lib_Makefile_add.am'))
                 tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
-
 
     def build_with_autotools(self):
 
