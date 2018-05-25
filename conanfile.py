@@ -247,16 +247,10 @@ class LibcurlConan(ConanFile):
         if self.options.custom_cacert:
             params.append('--with-ca-bundle=cacert.pem')
 
-        # FIXME: params.append('--prefix=%s' % self.package_folder.replace('\\', '/'))
-
-        # for mingw FIXME: not needed
-        # if self.is_mingw:
-        #     if self.settings.arch == "x86_64":
-        #         params.append('--build=x86_64-w64-mingw32')
-        #         params.append('--host=x86_64-w64-mingw32')
-        #     if self.settings.arch == "x86":
-        #         params.append('--build=i686-w64-mingw32')
-        #         params.append('--host=i686-w64-mingw32')
+        # Cross building flags
+        if tools.cross_building(self.settings):
+            if self.settings.os == "Linux" and "arm" in self.settings.arch:
+                params.append('--host=%s' % self.get_linux_arm_host())
 
         return " ".join(params)
 
@@ -350,7 +344,6 @@ class LibcurlConan(ConanFile):
         # it allows to pick up shared openssl
         self.output.info(repr(env_run.vars))
         with tools.environment_append(env_run.vars):
-
             with tools.chdir(self.source_subfolder):
                 # autoreconf
                 self.run('./buildconf', win_bash=self.is_mingw)
