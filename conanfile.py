@@ -351,8 +351,8 @@ class LibcurlConan(ConanFile):
 
                 # fix generated autotools files
                 tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
-                # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
-                # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
+
+                # BUG 1420, fixed in 7.54.1
                 if self.version_components[0] == 7 and self.version_components[1] < 55:
                     tools.replace_in_file("configure",
                                           'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
