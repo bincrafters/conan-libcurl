@@ -367,8 +367,8 @@ class LibcurlConan(ConanFile):
                 self.run("chmod +x configure")
                 configure_args = self.get_configure_command_args()
                 autotools.configure(vars=env_build_vars, args=configure_args)
-                autotools.make()
-                autotools.install()
+                autotools.make(vars=env_build_vars)
+                autotools.install(vars=env_build_vars)
 
     def build_with_cmake(self):
         # patch cmake files
