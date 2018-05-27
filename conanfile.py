@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from conans import ConanFile, AutoToolsBuildEnvironment, RunEnvironment, CMake, tools
 import os
 import re
 import shutil
+from conans import ConanFile, AutoToolsBuildEnvironment, RunEnvironment, CMake, tools
 
 
 class LibcurlConan(ConanFile):
