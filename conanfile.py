@@ -200,6 +200,15 @@ class LibcurlConan(ConanFile):
                                   '  DEBUG_POSTFIX "-d"',
                                   '  DEBUG_POSTFIX ""')
 
+        # BUG 1788, fixed in 7.56.0
+        # connectx() is for >=10.11 so it raised unguarded-availability error.
+        # Patch the file to avoid calling it instead of blinding ignoring error
+        if self.settings.os == "Macos":
+            if self.version_components[0] == 7 and self.version_components[1] < 56:
+                tools.replace_in_file(os.path.join(self.source_subfolder, 'lib', 'connect.c'),
+                                      '#if defined(CONNECT_DATA_IDEMPOTENT)',
+                                      '#if 0')
+
     def get_configure_command_args(self):
         params = []
         use_idn2 = self.version_components[0] == 7 and self.version_components[1] >= 53
@@ -363,14 +372,6 @@ class LibcurlConan(ConanFile):
                     tools.replace_in_file("configure",
                                           'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
                                           'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"')
-                # BUG 1788, fixed in 7.56.0
-                # connectx() is for >=10.11 so it raised unguarded-availability error.
-                # Patch the file to avoid calling it instead of blinding ignoring error
-                if self.settings.os == "Macos" and self.version_components[0] == 7 and \
-                        self.version_components[1] < 56:
-                    tools.replace_in_file('lib/connect.c',
-                                          '#if defined(CONNECT_DATA_IDEMPOTENT)',
-                                          '#if 0')
 
                 self.run("chmod +x configure")
                 configure_args = self.get_configure_command_args()
