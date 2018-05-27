@@ -34,11 +34,21 @@ class LibcurlConan(ConanFile):
                "with_libpsl": [True, False],
                "with_largemaxwritesize": [True, False],
                "with_nghttp2": [True, False]}
-    default_options = ("shared=False", "fPIC=True", "with_openssl=True", "with_winssl=False", "disable_threads=False",
-                       "with_ldap=False", "custom_cacert=False", "darwin_ssl=True",
-                       "with_libssh2=False", "with_libidn=False", "with_librtmp=False",
-                       "with_libmetalink=False", "with_largemaxwritesize=False",
-                       "with_libpsl=False", "with_nghttp2=False")
+    default_options = ("shared=False",
+                       "fPIC=True",
+                       "with_openssl=True",
+                       "with_winssl=False",
+                       "disable_threads=False",
+                       "with_ldap=False",
+                       "custom_cacert=False",
+                       "darwin_ssl=True",
+                       "with_libssh2=False",
+                       "with_libidn=False",
+                       "with_librtmp=False",
+                       "with_libmetalink=False",
+                       "with_libpsl=False",
+                       "with_largemaxwritesize=False",
+                       "with_nghttp2=False")
 
     @property
     def is_mingw(self):
