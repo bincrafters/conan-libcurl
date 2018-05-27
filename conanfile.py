@@ -316,17 +316,18 @@ class LibcurlConan(ConanFile):
                 tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
 
     def build_with_autotools(self):
+        autotools = AutoToolsBuildEnvironment(self, win_bash=self.is_mingw)
 
-        configure_suffix = self.get_configure_command_suffix()
-        env_build = AutoToolsBuildEnvironment(self, win_bash=self.is_mingw)
-        env_build_vars = env_build.vars
+        if self.settings.os != "Windows":
+            autotools.fpic = self.options.fPIC
 
         # tweaks for mingw
         if self.is_mingw:
             # patch autotools files
             self.patch_mingw_files()
 
-            env_build.defines.append('_AMD64_')
+            autotools.defines.append('_AMD64_')
+            env_build_vars = autotools.vars
             env_build_vars['RCFLAGS'] = '-O COFF'
             if self.settings.arch == "x86":
                 env_build_vars['RCFLAGS'] += ' --target=pe-i386'
@@ -334,44 +335,42 @@ class LibcurlConan(ConanFile):
                 env_build_vars['RCFLAGS'] += ' --target=pe-x86-64'
 
             del env_build_vars['LIBS']
+        else:
+            env_build_vars = autotools.vars
 
         self.output.info(repr(env_build_vars))
 
-        if self.settings.os != "Windows":
-            env_build.fpic = self.options.fPIC
+        env_run = RunEnvironment(self)
+        # run configure with *LD_LIBRARY_PATH env vars
+        # it allows to pick up shared openssl
+        self.output.info(repr(env_run.vars))
+        with tools.environment_append(env_run.vars):
+            with tools.chdir(self.source_subfolder):
+                # autoreconf
+                self.run('./buildconf', win_bash=self.is_mingw)
 
-        with tools.environment_append(env_build_vars):
-            # temporary fix for xcode9
-            # extremely fragile because make doesn't see CFLAGS from env, only from cmdline
-            if self.settings.os == "Macos":
-                make_suffix = "CFLAGS=\"-Wno-unguarded-availability " + env_build.vars['CFLAGS'] + "\""
-            else:
-                make_suffix = ''
+                # fix generated autotools files
+                tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
+                # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
+                # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
+                if self.version_components[0] == 7 and self.version_components[1] < 55:
+                    tools.replace_in_file("configure",
+                                          'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
+                                          'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"')
 
-            env_run = RunEnvironment(self)
-            # run configure with *LD_LIBRARY_PATH env vars
-            # it allows to pick up shared openssl
-            self.output.info(repr(env_run.vars))
-            with tools.environment_append(env_run.vars):
+                self.run("chmod +x configure")
+                configure_args = self.get_configure_command_args()
+                autotools.configure(vars=env_build_vars, args=configure_args)
 
-                with tools.chdir(self.source_subfolder):
-                    # autoreconf
-                    self.run('./buildconf', win_bash=self.is_mingw)
-
-                    # fix generated autotools files
-                    tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
-                    # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
-                    # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
-                    if self.version_components[0] == 7 and self.version_components[1] < 55:
-                        tools.replace_in_file(
-                            "configure",
-                            'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
-                            'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"')
-
-                    self.run("chmod +x configure")
-                    self.run("./configure " + configure_suffix, win_bash=self.is_mingw)
-                    self.run("make %s" % make_suffix, win_bash=self.is_mingw)
-                    self.run("make %s install" % make_suffix, win_bash=self.is_mingw)
+                # temporary fix for xcode9
+                # extremely fragile because make doesn't see CFLAGS from env, only from cmdline
+                make_args = []
+                if self.settings.os == "Macos":
+                    make_args = ["CFLAGS=\"-Wno-unguarded-availability " +
+                                   autotools.vars['CFLAGS'] + "\""]
+                self.output.info("Call make with args: " + tools.args_to_string(make_args))
+                autotools.make(args=make_args)
+                autotools.install(args=make_args)
 
     def build_with_cmake(self):
         # patch cmake files
