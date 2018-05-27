@@ -190,7 +190,7 @@ class LibcurlConan(ConanFile):
                                   '  DEBUG_POSTFIX "-d"',
                                   '  DEBUG_POSTFIX ""')
 
-    def get_configure_command_suffix(self):
+    def get_configure_command_args(self):
         params = []
         use_idn2 = self.version_components[0] == 7 and self.version_components[1] >= 53
         if use_idn2:
@@ -253,7 +253,7 @@ class LibcurlConan(ConanFile):
             if self.settings.os == "Linux" and "arm" in self.settings.arch:
                 params.append('--host=%s' % self.get_linux_arm_host())
 
-        return " ".join(params)
+        return params
 
     def get_linux_arm_host(self):
         arch = None
