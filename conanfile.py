@@ -237,8 +237,6 @@ class LibcurlConan(ConanFile):
         if self.options.custom_cacert:
             params.append('--with-ca-bundle=cacert.pem')
 
-        params.append('--prefix=%s' % self.package_folder.replace('\\', '/'))
-
         # for mingw
         if self.is_mingw:
             if self.settings.arch == "x86_64":
