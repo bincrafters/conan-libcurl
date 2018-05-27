@@ -319,24 +319,22 @@ class LibcurlConan(ConanFile):
         if self.settings.os != "Windows":
             autotools.fpic = self.options.fPIC
 
+        autotools_vars = autotools.vars
         # tweaks for mingw
         if self.is_mingw:
             # patch autotools files
             self.patch_mingw_files()
 
             autotools.defines.append('_AMD64_')
-            env_build_vars = autotools.vars
-            env_build_vars['RCFLAGS'] = '-O COFF'
+            autotools_vars['RCFLAGS'] = '-O COFF'
             if self.settings.arch == "x86":
-                env_build_vars['RCFLAGS'] += ' --target=pe-i386'
+                autotools_vars['RCFLAGS'] += ' --target=pe-i386'
             else:
-                env_build_vars['RCFLAGS'] += ' --target=pe-x86-64'
+                autotools_vars['RCFLAGS'] += ' --target=pe-x86-64'
 
-            del env_build_vars['LIBS']
-        else:
-            env_build_vars = autotools.vars
+            del autotools_vars['LIBS']
 
-        self.output.info(repr(env_build_vars))
+        self.output.info(repr(autotools_vars))
 
         env_run = RunEnvironment(self)
         # run configure with *LD_LIBRARY_PATH env vars
@@ -366,9 +364,9 @@ class LibcurlConan(ConanFile):
 
                 self.run("chmod +x configure")
                 configure_args = self.get_configure_command_args()
-                autotools.configure(vars=env_build_vars, args=configure_args)
-                autotools.make(vars=env_build_vars)
-                autotools.install(vars=env_build_vars)
+                autotools.configure(vars=autotools_vars, args=configure_args)
+                autotools.make(vars=autotools_vars)
+                autotools.install(vars=autotools_vars)
 
     def build_with_cmake(self):
         # patch cmake files
