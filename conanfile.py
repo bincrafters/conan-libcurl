@@ -357,20 +357,20 @@ class LibcurlConan(ConanFile):
                     tools.replace_in_file("configure",
                                           'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
                                           'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"')
+                # BUG 1788, fixed in 7.56.0
+                # connectx() is for >=10.11 so it raised unguarded-availability error.
+                # Patch the file to avoid calling it instead of blinding ignoring error
+                if self.settings.os == "Macos" and self.version_components[0] == 7 and \
+                        self.version_components[1] < 56:
+                    tools.replace_in_file('lib/connect.c',
+                                          '#if defined(CONNECT_DATA_IDEMPOTENT)',
+                                          '#if 0')
 
                 self.run("chmod +x configure")
                 configure_args = self.get_configure_command_args()
                 autotools.configure(vars=env_build_vars, args=configure_args)
-
-                # temporary fix for xcode9
-                # extremely fragile because make doesn't see CFLAGS from env, only from cmdline
-                make_args = []
-                if self.settings.os == "Macos":
-                    make_args = ["CFLAGS=\"-Wno-unguarded-availability " +
-                                   autotools.vars['CFLAGS'] + "\""]
-                self.output.info("Call make with args: " + tools.args_to_string(make_args))
-                autotools.make(args=make_args)
-                autotools.install(args=make_args)
+                autotools.make()
+                autotools.install()
 
     def build_with_cmake(self):
         # patch cmake files
