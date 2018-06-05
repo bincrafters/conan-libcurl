@@ -15,7 +15,7 @@ class LibcurlConan(ConanFile):
     homepage = "http://curl.haxx.se"
     license = "MIT"
     exports = ["LICENSE.md"]
-    exports_sources = ["FindCURL.cmake", "lib_Makefile_add.am", "CMakeLists.txt"]
+    exports_sources = ["lib_Makefile_add.am", "CMakeLists.txt"]
     generators = "cmake"
     source_subfolder = "source_subfolder"
     settings = "os", "arch", "compiler", "build_type"
@@ -136,7 +136,6 @@ class LibcurlConan(ConanFile):
 
     def package(self):
         # Everything is already installed by make install
-        self.copy("FindCURL.cmake")
         self.copy(pattern="COPYING*", dst="licenses", src=self.source_subfolder, ignore_case=True, keep_path=False)
 
         # Copy the certs to be used by client
@@ -188,10 +187,6 @@ class LibcurlConan(ConanFile):
             tools.replace_in_file(os.path.join(self.source_subfolder, 'include', 'curl', 'curl.h'),
                                   "define CURL_MAX_WRITE_SIZE 16384",
                                   "define CURL_MAX_WRITE_SIZE 10485760")
-
-        tools.replace_in_file('FindCURL.cmake',
-                              'set(CURL_VERSION_STRING "0")',
-                              'set(CURL_VERSION_STRING "%s")' % self.version)
 
         # temporary workaround for DEBUG_POSTFIX (curl issues #1796, #2121)
         # introduced in 7.55.0
