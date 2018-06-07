@@ -1,10 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from conans import ConanFile, AutoToolsBuildEnvironment, RunEnvironment, CMake, tools
 import os
 import re
 import shutil
+from conans import ConanFile, AutoToolsBuildEnvironment, RunEnvironment, CMake, tools
 
 
 class LibcurlConan(ConanFile):
@@ -15,7 +15,7 @@ class LibcurlConan(ConanFile):
     homepage = "http://curl.haxx.se"
     license = "MIT"
     exports = ["LICENSE.md"]
-    exports_sources = ["FindCURL.cmake", "lib_Makefile_add.am", "CMakeLists.txt"]
+    exports_sources = ["lib_Makefile_add.am", "CMakeLists.txt"]
     generators = "cmake"
     source_subfolder = "source_subfolder"
     settings = "os", "arch", "compiler", "build_type"
@@ -34,11 +34,21 @@ class LibcurlConan(ConanFile):
                "with_libpsl": [True, False],
                "with_largemaxwritesize": [True, False],
                "with_nghttp2": [True, False]}
-    default_options = ("shared=False", "fPIC=True", "with_openssl=True", "with_winssl=False", "disable_threads=False",
-                       "with_ldap=False", "custom_cacert=False", "darwin_ssl=True",
-                       "with_libssh2=False", "with_libidn=False", "with_librtmp=False",
-                       "with_libmetalink=False", "with_largemaxwritesize=False",
-                       "with_libpsl=False", "with_nghttp2=False")
+    default_options = ("shared=False",
+                       "fPIC=True",
+                       "with_openssl=True",
+                       "with_winssl=False",
+                       "disable_threads=False",
+                       "with_ldap=False",
+                       "custom_cacert=False",
+                       "darwin_ssl=True",
+                       "with_libssh2=False",
+                       "with_libidn=False",
+                       "with_librtmp=False",
+                       "with_libmetalink=False",
+                       "with_libpsl=False",
+                       "with_largemaxwritesize=False",
+                       "with_nghttp2=False")
 
     @property
     def is_mingw(self):
@@ -126,7 +136,6 @@ class LibcurlConan(ConanFile):
 
     def package(self):
         # Everything is already installed by make install
-        self.copy("FindCURL.cmake")
         self.copy(pattern="COPYING*", dst="licenses", src=self.source_subfolder, ignore_case=True, keep_path=False)
 
         # Copy the certs to be used by client
@@ -179,10 +188,6 @@ class LibcurlConan(ConanFile):
                                   "define CURL_MAX_WRITE_SIZE 16384",
                                   "define CURL_MAX_WRITE_SIZE 10485760")
 
-        tools.replace_in_file('FindCURL.cmake',
-                              'set(CURL_VERSION_STRING "0")',
-                              'set(CURL_VERSION_STRING "%s")' % self.version)
-
         # temporary workaround for DEBUG_POSTFIX (curl issues #1796, #2121)
         # introduced in 7.55.0
         if self.version_components[0] == 7 and self.version_components[1] >= 55:
@@ -190,7 +195,16 @@ class LibcurlConan(ConanFile):
                                   '  DEBUG_POSTFIX "-d"',
                                   '  DEBUG_POSTFIX ""')
 
-    def get_configure_command_suffix(self):
+        # BUG 1788, fixed in 7.56.0
+        # connectx() is for >=10.11 so it raised unguarded-availability error.
+        # Patch the file to avoid calling it instead of blinding ignoring error
+        if self.settings.os == "Macos":
+            if self.version_components[0] == 7 and self.version_components[1] < 56:
+                tools.replace_in_file(os.path.join(self.source_subfolder, 'lib', 'connect.c'),
+                                      '#if defined(CONNECT_DATA_IDEMPOTENT)',
+                                      '#if 0')
+
+    def get_configure_command_args(self):
         params = []
         use_idn2 = self.version_components[0] == 7 and self.version_components[1] >= 53
         if use_idn2:
@@ -215,11 +229,11 @@ class LibcurlConan(ConanFile):
             params.append("--without-ssl")
 
         if self.options.with_libssh2:
-            params.append("--with-libssh2=%s " % self.deps_cpp_info["libssh2"].lib_paths[0].replace('\\', '/'))
+            params.append("--with-libssh2=%s" % self.deps_cpp_info["libssh2"].lib_paths[0].replace('\\', '/'))
         else:
             params.append("--without-libssh2")
 
-        params.append("--with-zlib=%s " % self.deps_cpp_info["zlib"].lib_paths[0].replace('\\', '/'))
+        params.append("--with-zlib=%s" % self.deps_cpp_info["zlib"].lib_paths[0].replace('\\', '/'))
 
         if not self.options.shared:
             params.append("--disable-shared")
@@ -237,23 +251,12 @@ class LibcurlConan(ConanFile):
         if self.options.custom_cacert:
             params.append('--with-ca-bundle=cacert.pem')
 
-        params.append('--prefix=%s' % self.package_folder.replace('\\', '/'))
-
-        # for mingw
-        if self.is_mingw:
-            if self.settings.arch == "x86_64":
-                params.append('--build=x86_64-w64-mingw32')
-                params.append('--host=x86_64-w64-mingw32')
-            if self.settings.arch == "x86":
-                params.append('--build=i686-w64-mingw32')
-                params.append('--host=i686-w64-mingw32')
-
         # Cross building flags
         if tools.cross_building(self.settings):
             if self.settings.os == "Linux" and "arm" in self.settings.arch:
                 params.append('--host=%s' % self.get_linux_arm_host())
 
-        return " ".join(params)
+        return params
 
     def get_linux_arm_host(self):
         arch = None
@@ -316,62 +319,51 @@ class LibcurlConan(ConanFile):
                 tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
 
     def build_with_autotools(self):
+        autotools = AutoToolsBuildEnvironment(self, win_bash=self.is_mingw)
 
-        configure_suffix = self.get_configure_command_suffix()
-        env_build = AutoToolsBuildEnvironment(self, win_bash=self.is_mingw)
-        env_build_vars = env_build.vars
+        if self.settings.os != "Windows":
+            autotools.fpic = self.options.fPIC
 
+        autotools_vars = autotools.vars
         # tweaks for mingw
         if self.is_mingw:
             # patch autotools files
             self.patch_mingw_files()
 
-            env_build.defines.append('_AMD64_')
-            env_build_vars['RCFLAGS'] = '-O COFF'
+            autotools.defines.append('_AMD64_')
+            autotools_vars['RCFLAGS'] = '-O COFF'
             if self.settings.arch == "x86":
-                env_build_vars['RCFLAGS'] += ' --target=pe-i386'
+                autotools_vars['RCFLAGS'] += ' --target=pe-i386'
             else:
-                env_build_vars['RCFLAGS'] += ' --target=pe-x86-64'
+                autotools_vars['RCFLAGS'] += ' --target=pe-x86-64'
 
-            del env_build_vars['LIBS']
+            del autotools_vars['LIBS']
 
-        self.output.info(repr(env_build_vars))
+        self.output.info("Autotools env vars: " + repr(autotools_vars))
 
-        if self.settings.os != "Windows":
-            env_build.fpic = self.options.fPIC
+        env_run = RunEnvironment(self)
+        # run configure with *LD_LIBRARY_PATH env vars
+        # it allows to pick up shared openssl
+        self.output.info("Run vars: " + repr(env_run.vars))
+        with tools.environment_append(env_run.vars):
+            with tools.chdir(self.source_subfolder):
+                # autoreconf
+                self.run('./buildconf', win_bash=self.is_mingw)
 
-        with tools.environment_append(env_build_vars):
-            # temporary fix for xcode9
-            # extremely fragile because make doesn't see CFLAGS from env, only from cmdline
-            if self.settings.os == "Macos":
-                make_suffix = "CFLAGS=\"-Wno-unguarded-availability " + env_build.vars['CFLAGS'] + "\""
-            else:
-                make_suffix = ''
+                # fix generated autotools files
+                tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
 
-            env_run = RunEnvironment(self)
-            # run configure with *LD_LIBRARY_PATH env vars
-            # it allows to pick up shared openssl
-            self.output.info(repr(env_run.vars))
-            with tools.environment_append(env_run.vars):
+                # BUG 1420, fixed in 7.54.1
+                if self.version_components[0] == 7 and self.version_components[1] < 55:
+                    tools.replace_in_file("configure",
+                                          'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
+                                          'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"')
 
-                with tools.chdir(self.source_subfolder):
-                    # autoreconf
-                    self.run('./buildconf', win_bash=self.is_mingw)
-
-                    # fix generated autotools files
-                    tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
-                    # BUG: https://github.com/curl/curl/commit/bd742adb6f13dc668ffadb2e97a40776a86dc124
-                    # fixed in 7.54.1: https://github.com/curl/curl/commit/338f427a24f78a717888c7c2b6b91fa831bea28e
-                    if self.version_components[0] == 7 and self.version_components[1] < 55:
-                        tools.replace_in_file(
-                            "configure",
-                            'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
-                            'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"')
-
-                    self.run("chmod +x configure")
-                    self.run("./configure " + configure_suffix, win_bash=self.is_mingw)
-                    self.run("make %s" % make_suffix, win_bash=self.is_mingw)
-                    self.run("make %s install" % make_suffix, win_bash=self.is_mingw)
+                self.run("chmod +x configure")
+                configure_args = self.get_configure_command_args()
+                autotools.configure(vars=autotools_vars, args=configure_args)
+                autotools.make(vars=autotools_vars)
+                autotools.install(vars=autotools_vars)
 
     def build_with_cmake(self):
         # patch cmake files
