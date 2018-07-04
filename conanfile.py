@@ -118,6 +118,11 @@ class LibcurlConan(ConanFile):
 
         self.requires.add("zlib/1.2.11@conan/stable")
 
+    def package_id(self):
+        if "OpenSSL" in self.info.requires.pkg_names:
+            openssl = self.info.requires["OpenSSL"]
+            openssl.version = openssl.full_version.minor()
+
     def source(self):
         tools.get("https://curl.haxx.se/download/curl-%s.tar.gz" % self.version)
         os.rename("curl-%s" % self.version, self.source_subfolder)
