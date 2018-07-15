@@ -33,7 +33,8 @@ class LibcurlConan(ConanFile):
                "with_libmetalink": [True, False],
                "with_libpsl": [True, False],
                "with_largemaxwritesize": [True, False],
-               "with_nghttp2": [True, False]}
+               "with_nghttp2": [True, False],
+               "with_brotli": [True, False]}
     default_options = ("shared=False",
                        "fPIC=True",
                        "with_openssl=True",
@@ -48,7 +49,8 @@ class LibcurlConan(ConanFile):
                        "with_libmetalink=False",
                        "with_libpsl=False",
                        "with_largemaxwritesize=False",
-                       "with_nghttp2=False")
+                       "with_nghttp2=False",
+                       "with_brotli=False")
 
     @property
     def is_mingw(self):
@@ -166,6 +168,8 @@ class LibcurlConan(ConanFile):
                     self.cpp_info.libs.extend(["idn"])
                 if self.options.with_librtmp:
                     self.cpp_info.libs.extend(["rtmp"])
+                if self.options.with_brotli:
+                    self.cpp_info.libs.extend(["brotlidec"])
             if self.settings.os == "Macos":
                 if self.options.with_ldap:
                     self.cpp_info.libs.extend(["ldap"])
@@ -215,6 +219,7 @@ class LibcurlConan(ConanFile):
         params.append("--without-libmetalink" if not self.options.with_libmetalink else "--with-libmetalink")
         params.append("--without-libpsl" if not self.options.with_libpsl else "--with-libpsl")
         params.append("--without-nghttp2" if not self.options.with_nghttp2 else "--with-nghttp2")
+        params.append("--without-brotli" if not self.options.with_brotli else "--with-brotli")
 
         if self.settings.os == "Macos" and self.options.darwin_ssl:
             params.append("--with-darwinssl")
