@@ -60,6 +60,10 @@ class LibcurlConan(ConanFile):
     def version_components(self):
         return [int(x) for x in self.version.split('.')]
 
+    @property
+    def use_brotli(self):
+        return self.version_components[0] == 7 and self.version_components[1] >= 60
+
     def configure(self):
         del self.settings.compiler.libcxx
 
@@ -98,6 +102,9 @@ class LibcurlConan(ConanFile):
         use_libpsl = self.version_components[0] == 7 and self.version_components[1] >= 46
         if not use_libpsl:
             self.options.remove('with_libpsl')
+
+        if not self.use_brotli:
+            self.options.remove('with_brotli')
 
         if self.settings.os == "Windows":
             self.options.remove("fPIC")
@@ -168,7 +175,7 @@ class LibcurlConan(ConanFile):
                     self.cpp_info.libs.extend(["idn"])
                 if self.options.with_librtmp:
                     self.cpp_info.libs.extend(["rtmp"])
-                if self.options.with_brotli:
+                if self.use_brotli and self.options.with_brotli:
                     self.cpp_info.libs.extend(["brotlidec"])
             if self.settings.os == "Macos":
                 if self.options.with_ldap:
@@ -219,7 +226,8 @@ class LibcurlConan(ConanFile):
         params.append("--without-libmetalink" if not self.options.with_libmetalink else "--with-libmetalink")
         params.append("--without-libpsl" if not self.options.with_libpsl else "--with-libpsl")
         params.append("--without-nghttp2" if not self.options.with_nghttp2 else "--with-nghttp2")
-        params.append("--without-brotli" if not self.options.with_brotli else "--with-brotli")
+        if self.use_brotli:
+            params.append("--without-brotli" if not self.options.with_brotli else "--with-brotli")
 
         if self.settings.os == "Macos" and self.options.darwin_ssl:
             params.append("--with-darwinssl")
