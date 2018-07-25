@@ -199,9 +199,9 @@ class LibcurlConan(ConanFile):
                                   "define CURL_MAX_WRITE_SIZE 16384",
                                   "define CURL_MAX_WRITE_SIZE 10485760")
 
-        # temporary workaround for DEBUG_POSTFIX (curl issues #1796, #2121)
-        # introduced in 7.55.0
-        if self.version_components[0] == 7 and self.version_components[1] >= 55:
+        # BUG 2121, introduced in 7.55.0, fixed in 7.61.0
+        # workaround for DEBUG_POSTFIX
+        if self.version_components[0] == 7 and self.version_components[1] >= 55 and self.version_components[1] < 61:
             tools.replace_in_file(os.path.join(self.source_subfolder, 'lib', 'CMakeLists.txt'),
                                   '  DEBUG_POSTFIX "-d"',
                                   '  DEBUG_POSTFIX ""')
