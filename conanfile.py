@@ -9,7 +9,7 @@ from conans import ConanFile, AutoToolsBuildEnvironment, RunEnvironment, CMake, 
 
 class LibcurlConan(ConanFile):
     name = "libcurl"
-    version = "7.60.0"
+    version = "7.61.1"
     description = "command line tool and library for transferring data with URLs"
     url = "http://github.com/bincrafters/conan-libcurl"
     homepage = "http://curl.haxx.se"
