@@ -216,8 +216,8 @@ class LibcurlConan(ConanFile):
                                       '#if 0')
 
         # https://github.com/curl/curl/issues/2835
-        if self.options.darwin_ssl:
-            if self.settings.compiler == 'apple-clang' and self.settings.compiler.version == '9.1':
+        if self.settings.compiler == 'apple-clang' and self.settings.compiler.version == '9.1':
+            if self.options.darwin_ssl:
                 tools.replace_in_file(os.path.join(self.source_subfolder, 'lib', 'vtls', 'darwinssl.c'),
                                       '#define CURL_BUILD_MAC_10_13 MAC_OS_X_VERSION_MAX_ALLOWED >= 101300',
                                       '#define CURL_BUILD_MAC_10_13 0')
