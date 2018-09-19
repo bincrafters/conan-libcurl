@@ -334,6 +334,10 @@ class LibcurlConan(ConanFile):
     def build_with_autotools(self):
         autotools = AutoToolsBuildEnvironment(self, win_bash=self.is_mingw)
 
+        # https://github.com/curl/curl/issues/2835
+        if self.settings.compiler == 'apple-clang' and self.settings.compiler.version == '9.1':
+            autotools.flags.append('-mmacosx-version-min=10.12')
+
         if self.settings.os != "Windows":
             autotools.fpic = self.options.fPIC
 
