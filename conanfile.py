@@ -67,8 +67,6 @@ class LibcurlConan(ConanFile):
     def configure(self):
         del self.settings.compiler.libcxx
 
-    def config_options(self):
-
         # be careful with those flags:
         # - with_openssl AND darwin_ssl uses darwin_ssl (to maintain recipe compatibilty)
         # - with_openssl AND NOT darwin_ssl uses openssl
@@ -83,6 +81,8 @@ class LibcurlConan(ConanFile):
         if self.options.with_libssh2:
             if self.settings.compiler != "Visual Studio":
                 self.options["libssh2"].shared = self.options.shared
+
+    def config_options(self):
 
         if self.settings.os != "Macos":
             try:
