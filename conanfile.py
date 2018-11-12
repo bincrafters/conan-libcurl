@@ -44,6 +44,7 @@ class LibcurlConan(ConanFile):
     description = "command line tool and library for transferring data with URLs"
     url = "http://github.com/bincrafters/conan-libcurl"
     homepage = "http://curl.haxx.se"
+    author = "Bincrafters <bincrafters@gmail.com>"
     license = "MIT"
     exports = ["LICENSE.md"]
     exports_sources = ["lib_Makefile_add.am", "CMakeLists.txt"]
