@@ -5,37 +5,6 @@ import os
 import re
 import shutil
 from conans import ConanFile, AutoToolsBuildEnvironment, RunEnvironment, CMake, tools
-from contextlib import contextmanager
-
-
-@contextmanager
-def copy_shared_deps(conanfile, dest_dir):
-    """
-    Copy shared libraries for dependencies to fix DYLD_LIBRARY_PATH problems
-
-    Configure script creates conftest that cannot execute without shared openssl binaries.
-    Ways to solve the problem:
-    1. set *LD_LIBRARY_PATH (works with Linux with RunEnvironment
-        but does not work on OS X 10.11 with SIP)
-    2. copying dylib's to the build directory (fortunately works on OS X)
-    """
-    imported_libs = []
-    if conanfile.settings.os == "Macos":
-        for dep in conanfile.deps_cpp_info.deps:
-            if conanfile.options[dep].shared:
-                for lib_path in conanfile.deps_cpp_info[dep].lib_paths:
-                    for libname in os.listdir(lib_path):
-                        if libname.endswith('.dylib'):
-                            shutil.copy(os.path.join(lib_path, libname), dest_dir)
-                            imported_libs.append(libname)
-    if imported_libs:
-        conanfile.output.info("Copying shared deps to fix conftest: " + repr(imported_libs))
-    try:
-        yield
-    finally:
-        for imported_lib in imported_libs:
-            os.unlink(imported_lib)
-
 
 
 class LibcurlConan(ConanFile):
@@ -95,6 +64,18 @@ class LibcurlConan(ConanFile):
     @property
     def use_brotli(self):
         return self.version_components[0] == 7 and self.version_components[1] >= 60
+
+    def imports(self):
+        # Copy shared libraries for dependencies to fix DYLD_LIBRARY_PATH problems
+        #
+        # Configure script creates conftest that cannot execute without shared openssl binaries.
+        # Ways to solve the problem:
+        # 1. set *LD_LIBRARY_PATH (works with Linux with RunEnvironment
+        #     but does not work on OS X 10.11 with SIP)
+        # 2. copying dylib's to the build directory (fortunately works on OS X)
+
+        if self.settings.os == "Macos":
+            self.copy("*.dylib*", dst=self.source_subfolder, keep_path=False)
 
     def configure(self):
         del self.settings.compiler.libcxx
@@ -400,25 +381,23 @@ class LibcurlConan(ConanFile):
         self.output.info("Run vars: " + repr(env_run.vars))
         with tools.environment_append(env_run.vars):
             with tools.chdir(self.source_subfolder):
-                # copy dylibs from depends
-                with copy_shared_deps(self, '.'):
-                    # autoreconf
-                    self.run('./buildconf', win_bash=self.is_mingw)
+                # autoreconf
+                self.run('./buildconf', win_bash=self.is_mingw)
 
-                    # fix generated autotools files
-                    tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
+                # fix generated autotools files
+                tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
 
-                    # BUG 1420, fixed in 7.54.1
-                    if self.version_components[0] == 7 and self.version_components[1] < 55:
-                        tools.replace_in_file("configure",
-                                              'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
-                                              'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"')
+                # BUG 1420, fixed in 7.54.1
+                if self.version_components[0] == 7 and self.version_components[1] < 55:
+                    tools.replace_in_file("configure",
+                                          'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
+                                          'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"')
 
-                    self.run("chmod +x configure")
-                    configure_args = self.get_configure_command_args()
-                    autotools.configure(vars=autotools_vars, args=configure_args)
-                    autotools.make(vars=autotools_vars)
-                    autotools.install(vars=autotools_vars)
+                self.run("chmod +x configure")
+                configure_args = self.get_configure_command_args()
+                autotools.configure(vars=autotools_vars, args=configure_args)
+                autotools.make(vars=autotools_vars)
+                autotools.install(vars=autotools_vars)
 
     def build_with_cmake(self):
         # patch cmake files
