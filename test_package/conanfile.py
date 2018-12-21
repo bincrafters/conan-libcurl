@@ -5,6 +5,7 @@ from conans import ConanFile, CMake
 import os
 import subprocess
 import re
+import platform
 
 
 class TestPackageConan(ConanFile):
@@ -18,7 +19,8 @@ class TestPackageConan(ConanFile):
 
     def test(self):
         if "arm" in self.settings.arch:
-            self.test_arm()
+            if not tools.cross_building(self.settings):
+                self.test_arm()
         else:
             bin_path = os.path.join("bin", "test_package")
             self.run(bin_path, run_environment=True)
