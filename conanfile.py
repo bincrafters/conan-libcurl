@@ -110,6 +110,9 @@ class LibcurlConan(ConanFile):
                 pass
             elif self.settings.os == "Windows" and self.options.with_winssl:
                 pass
+            elif self.settings.os == "Windows" and tools.cross_building(self.settings):
+                # only recent OpenSSL packages allow cross-building
+                self.requires.add("OpenSSL/1.1.1a@conan/stable")
             else:
                 self.requires.add("OpenSSL/1.0.2n@conan/stable")
         if self.options.with_libssh2:
