@@ -302,9 +302,11 @@ class LibcurlConan(ConanFile):
                                   '')
 
             # patch for zlib naming in mingw
-            tools.replace_in_file("configure.ac",
-                                  '-lz ',
-                                  '-lzlib ')
+            # when cross-building, the name is correct
+            if not tools.cross_building(self.settings):
+                tools.replace_in_file("configure.ac",
+                                      '-lz ',
+                                      '-lzlib ')
 
             if self.options.shared:
                 # patch for shared mingw build
@@ -318,8 +320,10 @@ class LibcurlConan(ConanFile):
                                       'lib_LTLIBRARIES = libcurl.la',
                                       'noinst_LTLIBRARIES = libcurl.la')
                 # add directives to build dll
-                added_content = tools.load(os.path.join(self.source_folder, 'lib_Makefile_add.am'))
-                tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
+                # used only for native mingw-make
+                if not tools.cross_building(self.settings):
+                    added_content = tools.load(os.path.join(self.source_folder, 'lib_Makefile_add.am'))
+                    tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
 
     def build_with_autotools(self):
         use_win_bash = self.is_mingw and not tools.cross_building(self.settings)
