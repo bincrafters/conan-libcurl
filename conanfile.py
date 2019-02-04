@@ -322,7 +322,8 @@ class LibcurlConan(ConanFile):
                 tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
 
     def build_with_autotools(self):
-        autotools = AutoToolsBuildEnvironment(self, win_bash=self.is_mingw)
+        use_win_bash = self.is_mingw and not tools.cross_building(self.settings)
+        autotools = AutoToolsBuildEnvironment(self, win_bash=use_win_bash)
 
         if self.settings.os != "Windows":
             autotools.fpic = self.options.fPIC
@@ -351,7 +352,7 @@ class LibcurlConan(ConanFile):
         with tools.environment_append(env_run.vars):
             with tools.chdir(self.source_subfolder):
                 # autoreconf
-                self.run('./buildconf', win_bash=self.is_mingw)
+                self.run('./buildconf', win_bash=use_win_bash)
 
                 # fix generated autotools files
                 tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
