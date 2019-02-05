@@ -17,17 +17,18 @@ class TestPackageConan(ConanFile):
         cmake.build()
 
     def test(self):
-        with tools.environment_append(RunEnvironment(self).vars):
+        if "arm" in self.settings.arch:
+            self.test_arm()
+        elif tools.cross_building(self.settings) and self.settings.os == "Windows":
+            self.test_mingw_cross()
+        else:
             bin_path = os.path.join("bin", "test_package")
-            if self.settings.os == "Windows":
-                self.run(bin_path)
-            elif self.settings.os == "Macos":
-                self.run("DYLD_LIBRARY_PATH=%s %s" % (os.environ.get('DYLD_LIBRARY_PATH', ''), bin_path))
-            else:
-                if "arm" in self.settings.arch:
-                    self.test_arm()
-                else:
-                    self.run("LD_LIBRARY_PATH=%s %s" % (os.environ.get('LD_LIBRARY_PATH', ''), bin_path))
+            self.run(bin_path, run_environment=True)
+
+    def test_mingw_cross(self):
+        bin_path = os.path.join("bin", "test_package.exe")
+        output = subprocess.check_output(["file", bin_path]).decode()
+        assert re.search(r"PE32.*executable.*Windows", output)
 
     def test_arm(self):
         file_ext = "so" if self.options["libcurl"].shared else "a"
