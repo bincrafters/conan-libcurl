@@ -180,7 +180,10 @@ class LibcurlConan(ConanFile):
                     self.cpp_info.sharedlinkflags = self.cpp_info.exelinkflags
         else:
             self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
-            self.cpp_info.libs.append('Ws2_32')
+
+        if self.settings.os == "Windows":
+            # used on Windows for VS build, native and cross mingw build
+            self.cpp_info.libs.append('ws2_32')
             if self.options.with_ldap:
                 self.cpp_info.libs.append("wldap32")
 
