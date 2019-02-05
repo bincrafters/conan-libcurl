@@ -110,6 +110,9 @@ class LibcurlConan(ConanFile):
                 pass
             elif self.settings.os == "Windows" and self.options.with_winssl:
                 pass
+            elif self.settings.os == "Windows" and tools.cross_building(self.settings):
+                # only recent OpenSSL packages allow cross-building
+                self.requires.add("OpenSSL/1.1.1a@conan/stable")
             else:
                 self.requires.add("OpenSSL/1.0.2n@conan/stable")
         if self.options.with_libssh2:
@@ -158,6 +161,8 @@ class LibcurlConan(ConanFile):
     def package_info(self):
         if self.settings.compiler != "Visual Studio":
             self.cpp_info.libs = ['curl']
+            if self.settings.compiler in ("clang", "gcc"):
+                self.cpp_info.libs += ["pthread"]
             if self.settings.os == "Linux":
                 self.cpp_info.libs.extend(["rt", "pthread"])
                 if self.options.with_libssh2:
@@ -299,9 +304,11 @@ class LibcurlConan(ConanFile):
                                   '')
 
             # patch for zlib naming in mingw
-            tools.replace_in_file("configure.ac",
-                                  '-lz ',
-                                  '-lzlib ')
+            # when cross-building, the name is correct
+            if not tools.cross_building(self.settings):
+                tools.replace_in_file("configure.ac",
+                                      '-lz ',
+                                      '-lzlib ')
 
             if self.options.shared:
                 # patch for shared mingw build
@@ -315,11 +322,14 @@ class LibcurlConan(ConanFile):
                                       'lib_LTLIBRARIES = libcurl.la',
                                       'noinst_LTLIBRARIES = libcurl.la')
                 # add directives to build dll
-                added_content = tools.load(os.path.join(self.source_folder, 'lib_Makefile_add.am'))
-                tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
+                # used only for native mingw-make
+                if not tools.cross_building(self.settings):
+                    added_content = tools.load(os.path.join(self.source_folder, 'lib_Makefile_add.am'))
+                    tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
 
     def build_with_autotools(self):
-        autotools = AutoToolsBuildEnvironment(self, win_bash=self.is_mingw)
+        use_win_bash = self.is_mingw and not tools.cross_building(self.settings)
+        autotools = AutoToolsBuildEnvironment(self, win_bash=use_win_bash)
 
         if self.settings.os != "Windows":
             autotools.fpic = self.options.fPIC
@@ -348,7 +358,7 @@ class LibcurlConan(ConanFile):
         with tools.environment_append(env_run.vars):
             with tools.chdir(self.source_subfolder):
                 # autoreconf
-                self.run('./buildconf', win_bash=self.is_mingw)
+                self.run('./buildconf', win_bash=use_win_bash)
 
                 # fix generated autotools files
                 tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
