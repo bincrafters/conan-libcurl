@@ -19,11 +19,17 @@ class TestPackageConan(ConanFile):
 
     def test(self):
         if "arm" in self.settings.arch:
-            if not tools.cross_building(self.settings):
-                self.test_arm()
+            self.test_arm()
+        elif tools.cross_building(self.settings) and self.settings.os == "Windows":
+            self.test_mingw_cross()
         else:
             bin_path = os.path.join("bin", "test_package")
             self.run(bin_path, run_environment=True)
+
+    def test_mingw_cross(self):
+        bin_path = os.path.join("bin", "test_package.exe")
+        output = subprocess.check_output(["file", bin_path]).decode()
+        assert re.search(r"PE32.*executable.*Windows", output)
 
     def test_arm(self):
         file_ext = "so" if self.options["libcurl"].shared else "a"
