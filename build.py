@@ -5,6 +5,7 @@
 from bincrafters import build_template_default
 import platform
 import copy
+import os
 
 if __name__ == "__main__":
 
@@ -31,5 +32,20 @@ if __name__ == "__main__":
                 items.append([item.settings, new_options, item.env_vars,
                               new_build_requires, item.reference])
     builder.items = items
+
+    if os.getenv("_CONAN_TARGET_OS", None):
+        # Add non-shared builds with specific target OS
+        items = []
+        for item in builder.items:
+            if item.options["libcurl:shared"] == False:
+                new_settings = copy.copy(item.settings)
+                new_settings["os"] = os.getenv("_CONAN_TARGET_OS")
+                new_options = copy.copy(item.options)
+                new_options["libcurl:with_openssl"] = False
+
+                items.append([new_settings, new_options, item.env_vars,
+                    item.build_requires, item.reference])
+
+        builder.items = items
 
     builder.run()
