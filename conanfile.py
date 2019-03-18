@@ -183,8 +183,6 @@ class LibcurlConan(ConanFile):
     def package_info(self):
         if self.settings.compiler != "Visual Studio":
             self.cpp_info.libs = ['curl']
-            if self.settings.compiler in ("clang", "gcc"):
-                self.cpp_info.libs += ["pthread"]
             if self.settings.os == "Linux":
                 self.cpp_info.libs.extend(["rt", "pthread"])
                 if self.options.with_libssh2:
