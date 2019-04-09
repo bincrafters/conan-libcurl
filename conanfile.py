@@ -60,14 +60,6 @@ class LibcurlConan(ConanFile):
     def is_mingw(self):
         return self.settings.os == "Windows" and self.settings.compiler != "Visual Studio"
 
-    @property
-    def version_components(self):
-        return [int(x) for x in self.version.split('.')]
-
-    @property
-    def use_brotli(self):
-        return self.version_components[0] == 7 and self.version_components[1] >= 60
-
     def imports(self):
         # Copy shared libraries for dependencies to fix DYLD_LIBRARY_PATH problems
         #
@@ -113,23 +105,11 @@ class LibcurlConan(ConanFile):
         if self.settings.os == "Windows" and self.options.with_winssl and self.options.with_openssl:
             raise ConanInvalidConfiguration('Specify only with_winssl or with_openssl')
 
-        # libpsl is supported for libcurl >= 7.46.0
-        use_libpsl = self.version_components[0] == 7 and self.version_components[1] >= 46
-        if not use_libpsl:
-            self.options.remove('with_libpsl')
-
-        if not self.use_brotli:
-            self.options.remove('with_brotli')
-
         if self.settings.os == "Windows":
             self.options.remove("fPIC")
 
     def requirements(self):
         if self.options.with_openssl:
-            # libcurl before 7.56.0 supported openssl only experimentally on Windows (cmake). warn about it
-            if self.settings.os == "Windows" and self.version_components[1] < 56:
-                self.output.warn("OpenSSL is supported experimentally, use at your own risk")
-
             if self.settings.os == "Macos" and self.options.darwin_ssl:
                 pass
             elif self.settings.os == "Windows" and self.options.with_winssl:
@@ -195,7 +175,7 @@ class LibcurlConan(ConanFile):
                     self.cpp_info.libs.extend(["idn"])
                 if self.options.with_librtmp:
                     self.cpp_info.libs.extend(["rtmp"])
-                if self.use_brotli and self.options.with_brotli:
+                if self.options.with_brotli:
                     self.cpp_info.libs.extend(["brotlidec"])
             if self.settings.os == "Macos":
                 if self.options.with_ldap:
@@ -222,43 +202,21 @@ class LibcurlConan(ConanFile):
                                   "define CURL_MAX_WRITE_SIZE 16384",
                                   "define CURL_MAX_WRITE_SIZE 10485760")
 
-        # BUG 2121, introduced in 7.55.0, fixed in 7.61.0
-        # workaround for DEBUG_POSTFIX
-        if self.version_components[0] == 7 and self.version_components[1] >= 55 and self.version_components[1] < 61:
-            tools.replace_in_file(os.path.join(self._source_subfolder, 'lib', 'CMakeLists.txt'),
-                                  '  DEBUG_POSTFIX "-d"',
-                                  '  DEBUG_POSTFIX ""')
-
-        # BUG 1788, fixed in 7.56.0
-        # connectx() is for >=10.11 so it raised unguarded-availability error.
-        # Patch the file to avoid calling it instead of blinding ignoring error
-        if self.settings.os == "Macos":
-            if self.version_components[0] == 7 and self.version_components[1] < 56:
-                tools.replace_in_file(os.path.join(self._source_subfolder, 'lib', 'connect.c'),
-                                      '#if defined(CONNECT_DATA_IDEMPOTENT)',
-                                      '#if 0')
-
         # https://github.com/curl/curl/issues/2835
         if self.settings.compiler == 'apple-clang' and self.settings.compiler.version == '9.1':
             if self.options.darwin_ssl:
-                if self.version_components[0] == 7 and self.version_components[1] >= 56 and self.version_components[2] >= 1:
-                    tools.replace_in_file(os.path.join(self._source_subfolder, 'lib', 'vtls', 'darwinssl.c'),
-                                          '#define CURL_BUILD_MAC_10_13 MAC_OS_X_VERSION_MAX_ALLOWED >= 101300',
-                                          '#define CURL_BUILD_MAC_10_13 0')
+                tools.replace_in_file(os.path.join(self._source_subfolder, 'lib', 'vtls', 'darwinssl.c'),
+                                      '#define CURL_BUILD_MAC_10_13 MAC_OS_X_VERSION_MAX_ALLOWED >= 101300',
+                                      '#define CURL_BUILD_MAC_10_13 0')
 
     def get_configure_command_args(self):
         params = []
-        use_idn2 = self.version_components[0] == 7 and self.version_components[1] >= 53
-        if use_idn2:
-            params.append("--without-libidn2" if not self.options.with_libidn else "--with-libidn2")
-        else:
-            params.append("--without-libidn" if not self.options.with_libidn else "--with-libidn")
+        params.append("--without-libidn2" if not self.options.with_libidn else "--with-libidn2")
         params.append("--without-librtmp" if not self.options.with_librtmp else "--with-librtmp")
         params.append("--without-libmetalink" if not self.options.with_libmetalink else "--with-libmetalink")
         params.append("--without-libpsl" if not self.options.with_libpsl else "--with-libpsl")
         params.append("--without-nghttp2" if not self.options.with_nghttp2 else "--with-nghttp2")
-        if self.use_brotli:
-            params.append("--without-brotli" if not self.options.with_brotli else "--with-brotli")
+        params.append("--without-brotli" if not self.options.with_brotli else "--with-brotli")
 
         if self.settings.os == "Macos" and self.options.darwin_ssl:
             params.append("--with-darwinssl")
@@ -329,14 +287,9 @@ class LibcurlConan(ConanFile):
         with tools.chdir(self._source_subfolder):
             # for mingw builds - do not compile curl tool, just library
             # linking errors are much harder to fix than to exclude curl tool
-            if self.version_components[0] == 7 and self.version_components[1] >= 55:
-                tools.replace_in_file("Makefile.am",
-                                      'SUBDIRS = lib src',
-                                      'SUBDIRS = lib')
-            else:
-                tools.replace_in_file("Makefile.am",
-                                      'SUBDIRS = lib src include',
-                                      'SUBDIRS = lib include')
+            tools.replace_in_file("Makefile.am",
+                                  'SUBDIRS = lib src',
+                                  'SUBDIRS = lib')
 
             tools.replace_in_file("Makefile.am",
                                   'include src/Makefile.inc',
@@ -402,12 +355,6 @@ class LibcurlConan(ConanFile):
                 # fix generated autotools files
                 tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
 
-                # BUG 1420, fixed in 7.54.1
-                if self.version_components[0] == 7 and self.version_components[1] < 55:
-                    tools.replace_in_file("configure",
-                                          'LDFLAGS="`$PKGCONFIG --libs-only-L zlib` $LDFLAGS"',
-                                          'LDFLAGS="$LDFLAGS `$PKGCONFIG --libs-only-L zlib`"')
-
                 self.run("chmod +x configure")
                 configure_args = self.get_configure_command_args()
                 autotools.configure(vars=autotools_vars, args=configure_args)
@@ -435,8 +382,6 @@ class LibcurlConan(ConanFile):
         cmake.definitions['CMAKE_USE_WINSSL'] = 'with_winssl' in self.options and self.options.with_winssl
         cmake.definitions['CMAKE_USE_OPENSSL'] = 'with_openssl' in self.options and self.options.with_openssl
 
-        if self.settings.compiler != 'Visual Studio':
-            cmake.definitions['CMAKE_POSITION_INDEPENDENT_CODE'] = self.options.fPIC
         cmake.configure(source_dir=self._source_subfolder)
         cmake.build()
         cmake.install()
