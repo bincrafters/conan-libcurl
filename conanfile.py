@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from conans.errors import ConanInvalidConfiguration
 import os
 import re
 import shutil
@@ -11,6 +12,7 @@ class LibcurlConan(ConanFile):
     name = "libcurl"
     version = "7.61.1"
     description = "command line tool and library for transferring data with URLs"
+    topics = ("conan", "libcurl", "data-transfer")
     url = "http://github.com/bincrafters/conan-libcurl"
     homepage = "http://curl.haxx.se"
     author = "Bincrafters <bincrafters@gmail.com>"
@@ -18,7 +20,7 @@ class LibcurlConan(ConanFile):
     exports = ["LICENSE.md"]
     exports_sources = ["lib_Makefile_add.am", "CMakeLists.txt"]
     generators = "cmake"
-    source_subfolder = "source_subfolder"
+    _source_subfolder = "source_subfolder"
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False],
                "fPIC": [True, False],
@@ -36,22 +38,23 @@ class LibcurlConan(ConanFile):
                "with_largemaxwritesize": [True, False],
                "with_nghttp2": [True, False],
                "with_brotli": [True, False]}
-    default_options = ("shared=False",
-                       "fPIC=True",
-                       "with_openssl=True",
-                       "with_winssl=False",
-                       "disable_threads=False",
-                       "with_ldap=False",
-                       "custom_cacert=False",
-                       "darwin_ssl=True",
-                       "with_libssh2=False",
-                       "with_libidn=False",
-                       "with_librtmp=False",
-                       "with_libmetalink=False",
-                       "with_libpsl=False",
-                       "with_largemaxwritesize=False",
-                       "with_nghttp2=False",
-                       "with_brotli=False")
+    default_options = {'shared': False,
+                       'fPIC': True,
+                       'with_openssl': True,
+                       'with_winssl': False,
+                       'disable_threads': False,
+                       'with_ldap': False,
+                       'custom_cacert': False,
+                       'darwin_ssl': True,
+                       'with_libssh2': False,
+                       'with_libidn': False,
+                       'with_librtmp': False,
+                       'with_libmetalink': False,
+                       'with_libpsl': False,
+                       'with_largemaxwritesize': False,
+                       'with_nghttp2': False,
+                       'with_brotli': False
+                       }
 
     @property
     def is_mingw(self):
@@ -75,7 +78,7 @@ class LibcurlConan(ConanFile):
         # 2. copying dylib's to the build directory (fortunately works on OS X)
 
         if self.settings.os == "Macos":
-            self.copy("*.dylib*", dst=self.source_subfolder, keep_path=False)
+            self.copy("*.dylib*", dst=self._source_subfolder, keep_path=False)
 
     def configure(self):
         del self.settings.compiler.libcxx
@@ -96,7 +99,6 @@ class LibcurlConan(ConanFile):
                 self.options["libssh2"].shared = self.options.shared
 
     def config_options(self):
-
         if self.settings.os != "Macos":
             try:
                 self.options.remove("darwin_ssl")
@@ -109,7 +111,7 @@ class LibcurlConan(ConanFile):
                 pass
 
         if self.settings.os == "Windows" and self.options.with_winssl and self.options.with_openssl:
-            raise Exception('Specify only with_winssl or with_openssl')
+            raise ConanInvalidConfiguration('Specify only with_winssl or with_openssl')
 
         # libpsl is supported for libcurl >= 7.46.0
         use_libpsl = self.version_components[0] == 7 and self.version_components[1] >= 46
@@ -134,9 +136,9 @@ class LibcurlConan(ConanFile):
                 pass
             elif self.settings.os == "Windows" and tools.cross_building(self.settings):
                 # only recent OpenSSL packages allow cross-building
-                self.requires.add("OpenSSL/1.1.1a@conan/stable")
+                self.requires.add("OpenSSL/1.1.1b@conan/stable")
             else:
-                self.requires.add("OpenSSL/1.0.2n@conan/stable")
+                self.requires.add("OpenSSL/1.0.2r@conan/stable")
         if self.options.with_libssh2:
             if self.settings.compiler != "Visual Studio":
                 self.requires.add("libssh2/1.8.0@bincrafters/stable")
@@ -144,13 +146,15 @@ class LibcurlConan(ConanFile):
         self.requires.add("zlib/1.2.11@conan/stable")
 
     def source(self):
-        tools.get("https://curl.haxx.se/download/curl-%s.tar.gz" % self.version)
-        os.rename("curl-%s" % self.version, self.source_subfolder)
+        source_url = "https://curl.haxx.se/download/"
+        sha256 = "eaa812e9a871ea10dbe8e1d3f8f12a64a8e3e62aeab18cb23742e2f1727458ae"
+        tools.get("{}curl-{}.tar.gz".format(source_url, self.version), sha256=sha256)
+        os.rename("curl-%s" % self.version, self._source_subfolder)
         tools.download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem", verify=False)
-        os.rename(os.path.join(self.source_subfolder, "CMakeLists.txt"),
-                  os.path.join(self.source_subfolder, "CMakeLists_original.txt"))
+        os.rename(os.path.join(self._source_subfolder, "CMakeLists.txt"),
+                  os.path.join(self._source_subfolder, "CMakeLists_original.txt"))
         shutil.copy("CMakeLists.txt",
-                    os.path.join(self.source_subfolder, "CMakeLists.txt"))
+                    os.path.join(self._source_subfolder, "CMakeLists.txt"))
 
     def build(self):
         self.patch_misc_files()
@@ -161,7 +165,7 @@ class LibcurlConan(ConanFile):
 
     def package(self):
         # Everything is already installed by make install
-        self.copy(pattern="COPYING*", dst="licenses", src=self.source_subfolder, ignore_case=True, keep_path=False)
+        self.copy(pattern="COPYING*", dst="licenses", src=self._source_subfolder, ignore_case=True, keep_path=False)
 
         # Copy the certs to be used by client
         self.copy("cacert.pem", keep_path=False)
@@ -214,14 +218,14 @@ class LibcurlConan(ConanFile):
 
     def patch_misc_files(self):
         if self.options.with_largemaxwritesize:
-            tools.replace_in_file(os.path.join(self.source_subfolder, 'include', 'curl', 'curl.h'),
+            tools.replace_in_file(os.path.join(self._source_subfolder, 'include', 'curl', 'curl.h'),
                                   "define CURL_MAX_WRITE_SIZE 16384",
                                   "define CURL_MAX_WRITE_SIZE 10485760")
 
         # BUG 2121, introduced in 7.55.0, fixed in 7.61.0
         # workaround for DEBUG_POSTFIX
         if self.version_components[0] == 7 and self.version_components[1] >= 55 and self.version_components[1] < 61:
-            tools.replace_in_file(os.path.join(self.source_subfolder, 'lib', 'CMakeLists.txt'),
+            tools.replace_in_file(os.path.join(self._source_subfolder, 'lib', 'CMakeLists.txt'),
                                   '  DEBUG_POSTFIX "-d"',
                                   '  DEBUG_POSTFIX ""')
 
@@ -230,7 +234,7 @@ class LibcurlConan(ConanFile):
         # Patch the file to avoid calling it instead of blinding ignoring error
         if self.settings.os == "Macos":
             if self.version_components[0] == 7 and self.version_components[1] < 56:
-                tools.replace_in_file(os.path.join(self.source_subfolder, 'lib', 'connect.c'),
+                tools.replace_in_file(os.path.join(self._source_subfolder, 'lib', 'connect.c'),
                                       '#if defined(CONNECT_DATA_IDEMPOTENT)',
                                       '#if 0')
 
@@ -238,7 +242,7 @@ class LibcurlConan(ConanFile):
         if self.settings.compiler == 'apple-clang' and self.settings.compiler.version == '9.1':
             if self.options.darwin_ssl:
                 if self.version_components[0] == 7 and self.version_components[1] >= 56 and self.version_components[2] >= 1:
-                    tools.replace_in_file(os.path.join(self.source_subfolder, 'lib', 'vtls', 'darwinssl.c'),
+                    tools.replace_in_file(os.path.join(self._source_subfolder, 'lib', 'vtls', 'darwinssl.c'),
                                           '#define CURL_BUILD_MAC_10_13 MAC_OS_X_VERSION_MAX_ALLOWED >= 101300',
                                           '#define CURL_BUILD_MAC_10_13 0')
 
@@ -322,7 +326,7 @@ class LibcurlConan(ConanFile):
         if not self.is_mingw:
             return
         # patch autotools files
-        with tools.chdir(self.source_subfolder):
+        with tools.chdir(self._source_subfolder):
             # for mingw builds - do not compile curl tool, just library
             # linking errors are much harder to fix than to exclude curl tool
             if self.version_components[0] == 7 and self.version_components[1] >= 55:
@@ -391,7 +395,7 @@ class LibcurlConan(ConanFile):
         # it allows to pick up shared openssl
         self.output.info("Run vars: " + repr(env_run.vars))
         with tools.environment_append(env_run.vars):
-            with tools.chdir(self.source_subfolder):
+            with tools.chdir(self._source_subfolder):
                 # autoreconf
                 self.run('./buildconf', win_bash=use_win_bash)
 
@@ -412,7 +416,7 @@ class LibcurlConan(ConanFile):
 
     def build_with_cmake(self):
         # patch cmake files
-        with tools.chdir(self.source_subfolder):
+        with tools.chdir(self._source_subfolder):
             tools.replace_in_file("CMakeLists_original.txt",
                                   "include(CurlSymbolHiding)",
                                   "")
@@ -433,6 +437,6 @@ class LibcurlConan(ConanFile):
 
         if self.settings.compiler != 'Visual Studio':
             cmake.definitions['CMAKE_POSITION_INDEPENDENT_CODE'] = self.options.fPIC
-        cmake.configure(source_dir=self.source_subfolder)
+        cmake.configure(source_dir=self._source_subfolder)
         cmake.build()
         cmake.install()
