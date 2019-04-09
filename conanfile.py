@@ -10,7 +10,7 @@ from conans import ConanFile, AutoToolsBuildEnvironment, RunEnvironment, CMake, 
 
 class LibcurlConan(ConanFile):
     name = "libcurl"
-    version = "7.61.1"
+    version = "7.64.1"
     description = "command line tool and library for transferring data with URLs"
     topics = ("conan", "libcurl", "data-transfer")
     url = "http://github.com/bincrafters/conan-libcurl"
@@ -127,7 +127,7 @@ class LibcurlConan(ConanFile):
 
     def source(self):
         source_url = "https://curl.haxx.se/download/"
-        sha256 = "eaa812e9a871ea10dbe8e1d3f8f12a64a8e3e62aeab18cb23742e2f1727458ae"
+        sha256 = "432d3f466644b9416bc5b649d344116a753aeaa520c8beaf024a90cba9d3d35d"
         tools.get("{}curl-{}.tar.gz".format(source_url, self.version), sha256=sha256)
         os.rename("curl-%s" % self.version, self._source_subfolder)
         tools.download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem", verify=False)
