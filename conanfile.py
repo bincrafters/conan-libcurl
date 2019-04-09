@@ -142,64 +142,6 @@ class LibcurlConan(ConanFile):
         else:
             self.build_with_cmake()
 
-    def package(self):
-        self.copy(pattern="COPYING*", dst="licenses", src=self._source_subfolder, ignore_case=True, keep_path=False)
-        self.copy(pattern="LICENSE", dst="licenses", src=self._source_subfolder)
-
-        # Everything is already installed by make install for non-Visual Studio
-        if self.settings.compiler != "Visual Studio":
-            cmake = self._configure_cmake()
-            cmake.install()
-
-        # Copy the certs to be used by client
-        self.copy("cacert.pem", keep_path=False)
-
-        if self.settings.os == "Windows" and self.settings.compiler != "Visual Studio":
-            # Handle only mingw libs
-            self.copy(pattern="*.dll", dst="bin", keep_path=False)
-            self.copy(pattern="*dll.a", dst="lib", keep_path=False)
-            self.copy(pattern="*.def", dst="lib", keep_path=False)
-            self.copy(pattern="*.lib", dst="lib", keep_path=False)
-
-        # no need to distribute docs/man pages
-        shutil.rmtree(os.path.join(self.package_folder, 'share', 'man'), ignore_errors=True)
-        # no need for bin tools
-        for binname in ['curl', 'curl.exe']:
-            if os.path.isfile(os.path.join(self.package_folder, 'bin', binname)):
-                os.remove(os.path.join(self.package_folder, 'bin', binname))
-
-    def package_info(self):
-        if self.settings.compiler != "Visual Studio":
-            self.cpp_info.libs = ['curl']
-            if self.settings.os == "Linux":
-                self.cpp_info.libs.extend(["rt", "pthread"])
-                if self.options.with_libssh2:
-                    self.cpp_info.libs.extend(["ssh2"])
-                if self.options.with_libidn:
-                    self.cpp_info.libs.extend(["idn"])
-                if self.options.with_librtmp:
-                    self.cpp_info.libs.extend(["rtmp"])
-                if self.options.with_brotli:
-                    self.cpp_info.libs.extend(["brotlidec"])
-            if self.settings.os == "Macos":
-                if self.options.with_ldap:
-                    self.cpp_info.libs.extend(["ldap"])
-                if self.options.darwin_ssl:
-                    self.cpp_info.exelinkflags.append("-framework Cocoa")
-                    self.cpp_info.exelinkflags.append("-framework Security")
-                    self.cpp_info.sharedlinkflags = self.cpp_info.exelinkflags
-        else:
-            self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
-
-        if self.settings.os == "Windows":
-            # used on Windows for VS build, native and cross mingw build
-            self.cpp_info.libs.append('ws2_32')
-            if self.options.with_ldap:
-                self.cpp_info.libs.append("wldap32")
-
-        if not self.options.shared:
-            self.cpp_info.defines.append("CURL_STATICLIB=1")
-
     def patch_misc_files(self):
         if self.options.with_largemaxwritesize:
             tools.replace_in_file(os.path.join(self._source_subfolder, 'include', 'curl', 'curl.h'),
@@ -391,3 +333,61 @@ class LibcurlConan(ConanFile):
 
         cmake = self._configure_cmake()
         cmake.build()
+
+    def package(self):
+        self.copy(pattern="COPYING*", dst="licenses", src=self._source_subfolder, ignore_case=True, keep_path=False)
+        self.copy(pattern="LICENSE", dst="licenses", src=self._source_subfolder)
+
+        # Everything is already installed by make install for non-Visual Studio
+        if self.settings.compiler == "Visual Studio":
+            cmake = self._configure_cmake()
+            cmake.install()
+
+        # Copy the certs to be used by client
+        self.copy("cacert.pem", keep_path=False)
+
+        if self.settings.os == "Windows" and self.settings.compiler != "Visual Studio":
+            # Handle only mingw libs
+            self.copy(pattern="*.dll", dst="bin", keep_path=False)
+            self.copy(pattern="*dll.a", dst="lib", keep_path=False)
+            self.copy(pattern="*.def", dst="lib", keep_path=False)
+            self.copy(pattern="*.lib", dst="lib", keep_path=False)
+
+        # no need to distribute docs/man pages
+        shutil.rmtree(os.path.join(self.package_folder, 'share', 'man'), ignore_errors=True)
+        # no need for bin tools
+        for binname in ['curl', 'curl.exe']:
+            if os.path.isfile(os.path.join(self.package_folder, 'bin', binname)):
+                os.remove(os.path.join(self.package_folder, 'bin', binname))
+
+    def package_info(self):
+        if self.settings.compiler != "Visual Studio":
+            self.cpp_info.libs = ['curl']
+            if self.settings.os == "Linux":
+                self.cpp_info.libs.extend(["rt", "pthread"])
+                if self.options.with_libssh2:
+                    self.cpp_info.libs.extend(["ssh2"])
+                if self.options.with_libidn:
+                    self.cpp_info.libs.extend(["idn"])
+                if self.options.with_librtmp:
+                    self.cpp_info.libs.extend(["rtmp"])
+                if self.options.with_brotli:
+                    self.cpp_info.libs.extend(["brotlidec"])
+            if self.settings.os == "Macos":
+                if self.options.with_ldap:
+                    self.cpp_info.libs.extend(["ldap"])
+                if self.options.darwin_ssl:
+                    self.cpp_info.exelinkflags.append("-framework Cocoa")
+                    self.cpp_info.exelinkflags.append("-framework Security")
+                    self.cpp_info.sharedlinkflags = self.cpp_info.exelinkflags
+        else:
+            self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
+
+        if self.settings.os == "Windows":
+            # used on Windows for VS build, native and cross mingw build
+            self.cpp_info.libs.append('ws2_32')
+            if self.options.with_ldap:
+                self.cpp_info.libs.append("wldap32")
+
+        if not self.options.shared:
+            self.cpp_info.defines.append("CURL_STATICLIB=1")

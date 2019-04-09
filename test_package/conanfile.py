@@ -5,7 +5,6 @@ from conans import ConanFile, CMake, tools
 import os
 import subprocess
 import re
-import platform
 
 
 class TestPackageConan(ConanFile):
