@@ -272,7 +272,6 @@ class LibcurlConan(ConanFile):
         self.output.info("Run vars: " + repr(env_run.vars))
         with tools.environment_append(env_run.vars):
             with tools.chdir(self._source_subfolder):
-                autotools.install(vars=autotools_vars)
                 # autoreconf
                 self.run('./buildconf', win_bash=use_win_bash)
 
