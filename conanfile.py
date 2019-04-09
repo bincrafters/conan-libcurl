@@ -20,7 +20,7 @@ class LibcurlConan(ConanFile):
     exports = ["LICENSE.md"]
     exports_sources = ["lib_Makefile_add.am", "CMakeLists.txt"]
     generators = "cmake"
-    _source_subfolder = "source_subfolder"
+
     settings = "os", "arch", "compiler", "build_type"
     options = {"shared": [True, False],
                "fPIC": [True, False],
@@ -55,6 +55,9 @@ class LibcurlConan(ConanFile):
                        'with_nghttp2': False,
                        'with_brotli': False
                        }
+
+    _source_subfolder = "source_subfolder"
+    _build_subfolder = "build_subfolder"
 
     @property
     def is_mingw(self):
@@ -131,10 +134,6 @@ class LibcurlConan(ConanFile):
         tools.get("{}curl-{}.tar.gz".format(source_url, self.version), sha256=sha256)
         os.rename("curl-%s" % self.version, self._source_subfolder)
         tools.download("https://curl.haxx.se/ca/cacert.pem", "cacert.pem", verify=False)
-        os.rename(os.path.join(self._source_subfolder, "CMakeLists.txt"),
-                  os.path.join(self._source_subfolder, "CMakeLists_original.txt"))
-        shutil.copy("CMakeLists.txt",
-                    os.path.join(self._source_subfolder, "CMakeLists.txt"))
 
     def build(self):
         self.patch_misc_files()
@@ -144,8 +143,13 @@ class LibcurlConan(ConanFile):
             self.build_with_cmake()
 
     def package(self):
-        # Everything is already installed by make install
         self.copy(pattern="COPYING*", dst="licenses", src=self._source_subfolder, ignore_case=True, keep_path=False)
+        self.copy(pattern="LICENSE", dst="licenses", src=self._source_subfolder)
+
+        # Everything is already installed by make install for non-Visual Studio
+        if self.settings.compiler != "Visual Studio":
+            cmake = self._configure_cmake()
+            cmake.install()
 
         # Copy the certs to be used by client
         self.copy("cacert.pem", keep_path=False)
@@ -361,13 +365,7 @@ class LibcurlConan(ConanFile):
                 autotools.make(vars=autotools_vars)
                 autotools.install(vars=autotools_vars)
 
-    def build_with_cmake(self):
-        # patch cmake files
-        with tools.chdir(self._source_subfolder):
-            tools.replace_in_file("CMakeLists_original.txt",
-                                  "include(CurlSymbolHiding)",
-                                  "")
-
+    def _configure_cmake(self):
         cmake = CMake(self)
         cmake.definitions['BUILD_TESTING'] = False
         cmake.definitions['BUILD_CURL_EXE'] = False
@@ -381,7 +379,15 @@ class LibcurlConan(ConanFile):
         # mac builds do not use cmake so don't even bother about darwin_ssl
         cmake.definitions['CMAKE_USE_WINSSL'] = 'with_winssl' in self.options and self.options.with_winssl
         cmake.definitions['CMAKE_USE_OPENSSL'] = 'with_openssl' in self.options and self.options.with_openssl
+        cmake.configure(build_folder=self._build_subfolder)
+        return cmake
 
-        cmake.configure(source_dir=self._source_subfolder)
+    def build_with_cmake(self):
+        # patch cmake files
+        with tools.chdir(self._source_subfolder):
+            tools.replace_in_file("CMakeLists.txt",
+                                  "include(CurlSymbolHiding)",
+                                  "")
+
+        cmake = self._configure_cmake()
         cmake.build()
-        cmake.install()
