@@ -117,11 +117,8 @@ class LibcurlConan(ConanFile):
                 pass
             elif self.settings.os == "Windows" and self.options.with_winssl:
                 pass
-            elif self.settings.os == "Windows" and tools.cross_building(self.settings):
-                # only recent OpenSSL packages allow cross-building
-                self.requires.add("OpenSSL/1.1.1b@conan/stable")
             else:
-                self.requires.add("OpenSSL/1.0.2r@conan/stable")
+                self.requires.add("OpenSSL/1.1.1b@conan/stable")
         if self.options.with_libssh2:
             if self.settings.compiler != "Visual Studio":
                 self.requires.add("libssh2/1.8.0@bincrafters/stable")
@@ -267,6 +264,29 @@ class LibcurlConan(ConanFile):
 
     def build_with_autotools(self):
         use_win_bash = self.is_mingw and not tools.cross_building(self.settings)
+        autotools, autotools_vars = self._configure_autotools()
+
+        env_run = RunEnvironment(self)
+        # run configure with *LD_LIBRARY_PATH env vars
+        # it allows to pick up shared openssl
+        self.output.info("Run vars: " + repr(env_run.vars))
+        with tools.environment_append(env_run.vars):
+            with tools.chdir(self._source_subfolder):
+                autotools.install(vars=autotools_vars)
+                # autoreconf
+                self.run('./buildconf', win_bash=use_win_bash)
+
+                # fix generated autotools files
+                tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
+
+                self.run("chmod +x configure")
+                configure_args = self.get_configure_command_args()
+                autotools.configure(vars=autotools_vars, args=configure_args)
+                autotools.make(vars=autotools_vars)
+                autotools.install(vars=autotools_vars)
+
+    def _configure_autotools(self):
+        use_win_bash = self.is_mingw and not tools.cross_building(self.settings)
         autotools = AutoToolsBuildEnvironment(self, win_bash=use_win_bash)
 
         if self.settings.os != "Windows":
@@ -289,23 +309,10 @@ class LibcurlConan(ConanFile):
 
         self.output.info("Autotools env vars: " + repr(autotools_vars))
 
-        env_run = RunEnvironment(self)
-        # run configure with *LD_LIBRARY_PATH env vars
-        # it allows to pick up shared openssl
-        self.output.info("Run vars: " + repr(env_run.vars))
-        with tools.environment_append(env_run.vars):
-            with tools.chdir(self._source_subfolder):
-                # autoreconf
-                self.run('./buildconf', win_bash=use_win_bash)
+        configure_args = self.get_configure_command_args()
+        autotools.configure(vars=autotools_vars, args=configure_args)
 
-                # fix generated autotools files
-                tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
-
-                self.run("chmod +x configure")
-                configure_args = self.get_configure_command_args()
-                autotools.configure(vars=autotools_vars, args=configure_args)
-                autotools.make(vars=autotools_vars)
-                autotools.install(vars=autotools_vars)
+        return autotools, autotools_vars
 
     def _configure_cmake(self):
         cmake = CMake(self)
@@ -338,8 +345,16 @@ class LibcurlConan(ConanFile):
         self.copy(pattern="COPYING*", dst="licenses", src=self._source_subfolder, ignore_case=True, keep_path=False)
         self.copy(pattern="LICENSE", dst="licenses", src=self._source_subfolder)
 
-        # Everything is already installed by make install for non-Visual Studio
-        if self.settings.compiler == "Visual Studio":
+        # Execute install
+        if self.settings.compiler != "Visual Studio":
+            autotools, autotools_vars = self._configure_autotools()
+
+            env_run = RunEnvironment(self)
+
+            with tools.environment_append(env_run.vars):
+                with tools.chdir(self._source_subfolder):
+                    autotools.install(vars=autotools_vars)
+        else:
             cmake = self._configure_cmake()
             cmake.install()
 
