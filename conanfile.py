@@ -228,40 +228,39 @@ class LibcurlConan(ConanFile):
         if not self.is_mingw:
             return
         # patch autotools files
-        with tools.chdir(self._source_subfolder):
-            # for mingw builds - do not compile curl tool, just library
-            # linking errors are much harder to fix than to exclude curl tool
-            tools.replace_in_file("Makefile.am",
-                                  'SUBDIRS = lib src',
-                                  'SUBDIRS = lib')
+        # for mingw builds - do not compile curl tool, just library
+        # linking errors are much harder to fix than to exclude curl tool
+        tools.replace_in_file("Makefile.am",
+                              'SUBDIRS = lib src',
+                              'SUBDIRS = lib')
 
-            tools.replace_in_file("Makefile.am",
-                                  'include src/Makefile.inc',
+        tools.replace_in_file("Makefile.am",
+                              'include src/Makefile.inc',
+                              '')
+
+        # patch for zlib naming in mingw
+        # when cross-building, the name is correct
+        if not tools.cross_building(self.settings):
+            tools.replace_in_file("configure.ac",
+                                  '-lz ',
+                                  '-lzlib ')
+
+        if self.options.shared:
+            # patch for shared mingw build
+            tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
+                                  'noinst_LTLIBRARIES = libcurlu.la',
                                   '')
-
-            # patch for zlib naming in mingw
-            # when cross-building, the name is correct
+            tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
+                                  'noinst_LTLIBRARIES =',
+                                  '')
+            tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
+                                  'lib_LTLIBRARIES = libcurl.la',
+                                  'noinst_LTLIBRARIES = libcurl.la')
+            # add directives to build dll
+            # used only for native mingw-make
             if not tools.cross_building(self.settings):
-                tools.replace_in_file("configure.ac",
-                                      '-lz ',
-                                      '-lzlib ')
-
-            if self.options.shared:
-                # patch for shared mingw build
-                tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
-                                      'noinst_LTLIBRARIES = libcurlu.la',
-                                      '')
-                tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
-                                      'noinst_LTLIBRARIES =',
-                                      '')
-                tools.replace_in_file(os.path.join('lib', 'Makefile.am'),
-                                      'lib_LTLIBRARIES = libcurl.la',
-                                      'noinst_LTLIBRARIES = libcurl.la')
-                # add directives to build dll
-                # used only for native mingw-make
-                if not tools.cross_building(self.settings):
-                    added_content = tools.load(os.path.join(self.source_folder, 'lib_Makefile_add.am'))
-                    tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
+                added_content = tools.load(os.path.join(self.source_folder, 'lib_Makefile_add.am'))
+                tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
 
     def build_with_autotools(self):
         env_run = RunEnvironment(self)
