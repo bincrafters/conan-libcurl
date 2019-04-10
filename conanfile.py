@@ -58,6 +58,7 @@ class LibcurlConan(ConanFile):
 
     _source_subfolder = "source_subfolder"
     _build_subfolder = "build_subfolder"
+    _autotools = False
 
     @property
     def is_mingw(self):
@@ -263,41 +264,30 @@ class LibcurlConan(ConanFile):
                     tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
 
     def build_with_autotools(self):
-        use_win_bash = self.is_mingw and not tools.cross_building(self.settings)
-        autotools, autotools_vars = self._configure_autotools()
-
         env_run = RunEnvironment(self)
         # run configure with *LD_LIBRARY_PATH env vars
         # it allows to pick up shared openssl
         self.output.info("Run vars: " + repr(env_run.vars))
         with tools.environment_append(env_run.vars):
             with tools.chdir(self._source_subfolder):
+                use_win_bash = self.is_mingw and not tools.cross_building(self.settings)
+                autotools, autotools_vars = self._configure_autotools()
+
                 # autoreconf
                 self.run('./buildconf', win_bash=use_win_bash)
 
                 # fix generated autotools files
                 tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
-
                 self.run("chmod +x configure")
+
                 configure_args = self.get_configure_command_args()
                 autotools.configure(vars=autotools_vars, args=configure_args)
                 autotools.make(vars=autotools_vars)
-                autotools.install(vars=autotools_vars)
 
-    def _configure_autotools(self):
-        use_win_bash = self.is_mingw and not tools.cross_building(self.settings)
-        autotools = AutoToolsBuildEnvironment(self, win_bash=use_win_bash)
-
-        if self.settings.os != "Windows":
-            autotools.fpic = self.options.fPIC
-
-        autotools_vars = autotools.vars
+    def _configure_autotools_vars(self):
+        autotools_vars = self._autotools.vars
         # tweaks for mingw
         if self.is_mingw:
-            # patch autotools files
-            self.patch_mingw_files()
-
-            autotools.defines.append('_AMD64_')
             autotools_vars['RCFLAGS'] = '-O COFF'
             if self.settings.arch == "x86":
                 autotools_vars['RCFLAGS'] += ' --target=pe-i386'
@@ -305,13 +295,30 @@ class LibcurlConan(ConanFile):
                 autotools_vars['RCFLAGS'] += ' --target=pe-x86-64'
 
             del autotools_vars['LIBS']
+            self.output.info("Autotools env vars: " + repr(autotools_vars))
+        return autotools_vars
 
-        self.output.info("Autotools env vars: " + repr(autotools_vars))
+    def _configure_autotools(self):
+        if not self._autotools:
+            use_win_bash = self.is_mingw and not tools.cross_building(self.settings)
+            self._autotools = AutoToolsBuildEnvironment(self, win_bash=use_win_bash)
 
-        configure_args = self.get_configure_command_args()
-        autotools.configure(vars=autotools_vars, args=configure_args)
+            if self.settings.os != "Windows":
+                self._autotools.fpic = self.options.fPIC
 
-        return autotools, autotools_vars
+            autotools_vars = self._configure_autotools_vars()
+
+            # tweaks for mingw
+            if self.is_mingw:
+                # patch autotools files
+                self.patch_mingw_files()
+
+                self._autotools.defines.append('_AMD64_')
+
+            configure_args = self.get_configure_command_args()
+            self._autotools.configure(vars=autotools_vars, args=configure_args)
+
+        return self._autotools, self._configure_autotools_vars()
 
     def _configure_cmake(self):
         cmake = CMake(self)
@@ -346,12 +353,11 @@ class LibcurlConan(ConanFile):
 
         # Execute install
         if self.settings.compiler != "Visual Studio":
-            autotools, autotools_vars = self._configure_autotools()
-
             env_run = RunEnvironment(self)
 
             with tools.environment_append(env_run.vars):
                 with tools.chdir(self._source_subfolder):
+                    autotools, autotools_vars = self._configure_autotools()
                     autotools.install(vars=autotools_vars)
         else:
             cmake = self._configure_cmake()
