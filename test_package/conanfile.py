@@ -34,4 +34,11 @@ class TestPackageConan(ConanFile):
         file_ext = "so" if self.options["libcurl"].shared else "a"
         lib_path = os.path.join(self.deps_cpp_info["libcurl"].libdirs[0], "libcurl.%s" % file_ext)
         output = subprocess.check_output(["readelf", "-h", lib_path]).decode()
-        assert re.search(r"Machine:\s+ARM", output)
+
+        if "armv8" in self.settings.arch:
+            if self.settings.arch == "armv8_32":
+                assert re.search(r"Machine:\s+ARM", output)
+            else:
+                assert re.search(r"Machine:\s+AArch64", output)
+        else:
+            assert re.search(r"Machine:\s+ARM", output)
