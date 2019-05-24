@@ -50,9 +50,18 @@ class LibcurlConan(ConanFile):
                        "with_largemaxwritesize=False",
                        "with_nghttp2=False")
 
+    def build_requirements(self):
+        if tools.os_info.is_windows and not self.is_msvc:
+            if "CONAN_BASH_PATH" not in os.environ:
+                self.build_requires("msys2_installer/latest@bincrafters/stable")
+
+    @property
+    def is_msvc(self):
+        return self.settings.compiler == "Visual Studio"
+
     @property
     def is_mingw(self):
-        return self.settings.os == "Windows" and self.settings.compiler != "Visual Studio"
+        return self.settings.os == "Windows" and self.settings.compiler == "gcc"
 
     @property
     def version_components(self):
@@ -75,7 +84,7 @@ class LibcurlConan(ConanFile):
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
                 self.options["OpenSSL"].shared = self.options.shared
         if self.options.with_libssh2:
-            if self.settings.compiler != "Visual Studio":
+            if not self.is_msvc:
                 self.options["libssh2"].shared = self.options.shared
 
         if self.settings.os != "Macos":
@@ -116,7 +125,7 @@ class LibcurlConan(ConanFile):
             else:
                 self.requires.add("OpenSSL/1.0.2n@conan/stable")
         if self.options.with_libssh2:
-            if self.settings.compiler != "Visual Studio":
+            if not self.is_msvc:
                 self.requires.add("libssh2/1.8.0@bincrafters/stable")
 
         self.requires.add("zlib/1.2.11@conan/stable")
@@ -132,7 +141,7 @@ class LibcurlConan(ConanFile):
 
     def build(self):
         self.patch_misc_files()
-        if self.settings.compiler != "Visual Studio":
+        if not self.is_msvc:
             self.build_with_autotools()
         else:
             self.build_with_cmake()
@@ -144,7 +153,7 @@ class LibcurlConan(ConanFile):
         # Copy the certs to be used by client
         self.copy("cacert.pem", keep_path=False)
 
-        if self.settings.os == "Windows" and self.settings.compiler != "Visual Studio":
+        if self.settings.os == "Windows" and not self.is_msvc:
             # Handle only mingw libs
             self.copy(pattern="*.dll", dst="bin", keep_path=False)
             self.copy(pattern="*dll.a", dst="lib", keep_path=False)
@@ -159,7 +168,7 @@ class LibcurlConan(ConanFile):
                 os.remove(os.path.join(self.package_folder, 'bin', binname))
 
     def package_info(self):
-        if self.settings.compiler != "Visual Studio":
+        if not self.is_msvc:
             self.cpp_info.libs = ['curl']
             if self.settings.compiler in ("clang", "gcc"):
                 self.cpp_info.libs += ["pthread"]
@@ -331,7 +340,7 @@ class LibcurlConan(ConanFile):
                     tools.save(os.path.join('lib', 'Makefile.am'), added_content, append=True)
 
     def build_with_autotools(self):
-        use_win_bash = self.is_mingw and not tools.cross_building(self.settings)
+        use_win_bash = tools.os_info.is_windows
         autotools = AutoToolsBuildEnvironment(self, win_bash=use_win_bash)
 
         if self.settings.os != "Windows":
@@ -399,8 +408,6 @@ class LibcurlConan(ConanFile):
         cmake.definitions['CMAKE_USE_WINSSL'] = 'with_winssl' in self.options and self.options.with_winssl
         cmake.definitions['CMAKE_USE_OPENSSL'] = 'with_openssl' in self.options and self.options.with_openssl
 
-        if self.settings.compiler != 'Visual Studio':
-            cmake.definitions['CMAKE_POSITION_INDEPENDENT_CODE'] = self.options.fPIC
         cmake.configure(source_dir=self.source_subfolder)
         cmake.build()
         cmake.install()
