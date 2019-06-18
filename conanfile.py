@@ -51,13 +51,17 @@ class LibcurlConan(ConanFile):
                        "with_nghttp2=False")
 
     def build_requirements(self):
-        if tools.os_info.is_windows and not self.is_msvc:
+        if tools.os_info.is_windows and not self.is_msvc and not self.is_clangcl:
             if "CONAN_BASH_PATH" not in os.environ:
                 self.build_requires("msys2_installer/latest@bincrafters/stable")
 
     @property
     def is_msvc(self):
         return self.settings.compiler == "Visual Studio"
+    
+    @property
+    def is_clangcl(self):
+        return self.settings.os == "Windows" and self.settings.compiler == "clang"
 
     @property
     def is_mingw(self):
@@ -84,7 +88,7 @@ class LibcurlConan(ConanFile):
             if self.settings.os != "Macos" or not self.options.darwin_ssl:
                 self.options["OpenSSL"].shared = self.options.shared
         if self.options.with_libssh2:
-            if not self.is_msvc:
+            if not self.is_msvc and not self.is_clangcl:
                 self.options["libssh2"].shared = self.options.shared
 
         if self.settings.os != "Macos":
@@ -125,7 +129,7 @@ class LibcurlConan(ConanFile):
             else:
                 self.requires.add("OpenSSL/1.0.2n@conan/stable")
         if self.options.with_libssh2:
-            if not self.is_msvc:
+            if not self.is_msvc and not self.is_clangcl:
                 self.requires.add("libssh2/1.8.0@bincrafters/stable")
 
         self.requires.add("zlib/1.2.11@conan/stable")
@@ -141,10 +145,10 @@ class LibcurlConan(ConanFile):
 
     def build(self):
         self.patch_misc_files()
-        if not self.is_msvc:
-            self.build_with_autotools()
-        else:
+        if self.is_clangcl or self.is_msvc:
             self.build_with_cmake()
+        else:
+            self.build_with_autotools()
 
     def package(self):
         # Everything is already installed by make install
@@ -153,7 +157,7 @@ class LibcurlConan(ConanFile):
         # Copy the certs to be used by client
         self.copy("cacert.pem", keep_path=False)
 
-        if self.settings.os == "Windows" and not self.is_msvc:
+        if self.settings.os == "Windows" and not self.is_msvc and not self.is_clangcl:
             # Handle only mingw libs
             self.copy(pattern="*.dll", dst="bin", keep_path=False)
             self.copy(pattern="*dll.a", dst="lib", keep_path=False)
@@ -168,7 +172,9 @@ class LibcurlConan(ConanFile):
                 os.remove(os.path.join(self.package_folder, 'bin', binname))
 
     def package_info(self):
-        if not self.is_msvc:
+        if self.is_msvc or self.is_clangcl:
+            self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
+        else:
             self.cpp_info.libs = ['curl']
             if self.settings.compiler in ("clang", "gcc"):
                 self.cpp_info.libs += ["pthread"]
@@ -187,8 +193,6 @@ class LibcurlConan(ConanFile):
                     self.cpp_info.exelinkflags.append("-framework Cocoa")
                     self.cpp_info.exelinkflags.append("-framework Security")
                     self.cpp_info.sharedlinkflags = self.cpp_info.exelinkflags
-        else:
-            self.cpp_info.libs = ['libcurl_imp'] if self.options.shared else ['libcurl']
 
         if self.settings.os == "Windows":
             # used on Windows for VS build, native and cross mingw build
