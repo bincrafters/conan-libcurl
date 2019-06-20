@@ -123,6 +123,8 @@ class LibcurlConan(ConanFile):
         if self.options.with_libssh2:
             if self.settings.compiler != "Visual Studio":
                 self.requires.add("libssh2/1.8.0@bincrafters/stable")
+        if self.options.with_nghttp2:
+            self.requires.add("nghttp2/1.38.0@bincrafters/stable")
 
         self.requires.add("zlib/1.2.11@conan/stable")
 
@@ -159,8 +161,11 @@ class LibcurlConan(ConanFile):
         params.append("--without-librtmp" if not self.options.with_librtmp else "--with-librtmp")
         params.append("--without-libmetalink" if not self.options.with_libmetalink else "--with-libmetalink")
         params.append("--without-libpsl" if not self.options.with_libpsl else "--with-libpsl")
+<<<<<<< HEAD
         params.append("--without-nghttp2" if not self.options.with_nghttp2 else "--with-nghttp2")
         params.append("--without-brotli" if not self.options.with_brotli else "--with-brotli")
+=======
+>>>>>>> 69e8d7b... Enable nghttp2 integration
 
         if self.settings.os == "Macos" and self.options.darwin_ssl:
             params.append("--with-darwinssl")
@@ -178,6 +183,11 @@ class LibcurlConan(ConanFile):
             params.append("--with-libssh2=%s" % self.deps_cpp_info["libssh2"].lib_paths[0].replace('\\', '/'))
         else:
             params.append("--without-libssh2")
+
+        if self.options.with_nghttp2:
+            params.append("--with-nghttp2=%s" % self.deps_cpp_info["nghttp2"].rootpath.replace('\\', '/'))
+        else:
+            params.append("--without-nghttp2")
 
         params.append("--with-zlib=%s" % self.deps_cpp_info["zlib"].lib_paths[0].replace('\\', '/'))
 
