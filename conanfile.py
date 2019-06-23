@@ -414,5 +414,11 @@ class LibcurlConan(ConanFile):
             if self.options.with_ldap:
                 self.cpp_info.libs.append("wldap32")
 
+        if self.is_mingw:
+            # provide pthread for dependent packages
+            self.cpp_info.cflags.append("-pthread")
+            self.cpp_info.exelinkflags.append("-pthread")
+            self.cpp_info.sharedlinkflags.append("-pthread")
+
         if not self.options.shared:
             self.cpp_info.defines.append("CURL_STATICLIB=1")
