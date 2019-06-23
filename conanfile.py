@@ -161,11 +161,7 @@ class LibcurlConan(ConanFile):
         params.append("--without-librtmp" if not self.options.with_librtmp else "--with-librtmp")
         params.append("--without-libmetalink" if not self.options.with_libmetalink else "--with-libmetalink")
         params.append("--without-libpsl" if not self.options.with_libpsl else "--with-libpsl")
-<<<<<<< HEAD
-        params.append("--without-nghttp2" if not self.options.with_nghttp2 else "--with-nghttp2")
         params.append("--without-brotli" if not self.options.with_brotli else "--with-brotli")
-=======
->>>>>>> 69e8d7b... Enable nghttp2 integration
 
         if self.settings.os == "Macos" and self.options.darwin_ssl:
             params.append("--with-darwinssl")
