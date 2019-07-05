@@ -178,6 +178,8 @@ class LibcurlConan(ConanFile):
             self.cpp_info.libs.append('Ws2_32')
             if self.options.with_ldap:
                 self.cpp_info.libs.append("wldap32")
+            if self.options.with_winssl:
+                self.cpp_info.libs.append("Crypt32")
 
         if not self.options.shared:
             self.cpp_info.defines.append("CURL_STATICLIB=1")
