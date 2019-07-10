@@ -23,10 +23,16 @@ environment:
           CONAN_BUILD_TYPES: Debug
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
           CONAN_VISUAL_VERSIONS: 15
-          CONAN_BUILD_TYPES: Release
+          CONAN_TOTAL_PAGES: 3
+          CONAN_CURRENT_PAGE: 1
         - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
           CONAN_VISUAL_VERSIONS: 15
-          CONAN_BUILD_TYPES: Debug
+          CONAN_TOTAL_PAGES: 3
+          CONAN_CURRENT_PAGE: 2
+        - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+          CONAN_VISUAL_VERSIONS: 15
+          CONAN_TOTAL_PAGES: 3
+          CONAN_CURRENT_PAGE: 3
 
 install:
   - set PATH=%PATH%;%PYTHON%/Scripts/
