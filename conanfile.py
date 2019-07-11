@@ -119,7 +119,12 @@ class LibcurlConan(ConanFile):
             if self.settings.os == "Windows" and self.version_components[1] < 56:
                 self.output.warn("OpenSSL is supported experimentally, use at your own risk")
 
-            self.requires.add("OpenSSL/1.1.1c@conan/stable")
+            if self.settings.os == "Macos" and self.options.darwin_ssl:
+                pass
+            elif self.settings.os == "Windows" and self.options.with_winssl:
+                pass
+            else:
+                self.requires.add("OpenSSL/1.1.1c@conan/stable")
         if self.options.with_libssh2:
             if not self.is_msvc and not self.is_clangcl:
                 self.requires.add("libssh2/1.8.0@bincrafters/stable")
