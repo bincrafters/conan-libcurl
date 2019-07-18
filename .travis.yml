@@ -17,15 +17,9 @@ matrix:
       - <<: *linux
         env: CONAN_GCC_VERSIONS=6 CONAN_DOCKER_IMAGE=conanio/gcc6
       - <<: *linux
-        env: CONAN_GCC_VERSIONS=7 CONAN_ARCHS=armv7 CONAN_DOCKER_IMAGE=conanio/gcc7-armv7 CONAN_BUILD_TYPES=Release CONAN_BUILD_POLICY=missing
-      - <<: *linux
         env: CONAN_GCC_VERSIONS=7 CONAN_DOCKER_IMAGE=conanio/gcc7
       - <<: *linux
-        env: CONAN_GCC_VERSIONS=8 CONAN_ARCHS=armv7 CONAN_DOCKER_IMAGE=conanio/gcc8-armv7 CONAN_BUILD_TYPES=Release CONAN_BUILD_POLICY=missing
-      - <<: *linux
         env: CONAN_GCC_VERSIONS=8 CONAN_DOCKER_IMAGE=conanio/gcc8
-      - <<: *linux
-        env: CONAN_GCC_VERSIONS=9 CONAN_ARCHS=armv7 CONAN_DOCKER_IMAGE=conanio/gcc9-armv7 CONAN_BUILD_TYPES=Release CONAN_BUILD_POLICY=missing
       - <<: *linux
         env: CONAN_CLANG_VERSIONS=3.9 CONAN_DOCKER_IMAGE=conanio/clang39
       - <<: *linux
