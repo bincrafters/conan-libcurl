@@ -301,17 +301,15 @@ class LibcurlConan(ConanFile):
         with tools.environment_append(env_run.vars):
             with tools.chdir(self._source_subfolder):
                 use_win_bash = self.is_mingw and not tools.cross_building(self.settings)
-                autotools, autotools_vars = self._configure_autotools()
 
                 # autoreconf
                 self.run('./buildconf', win_bash=use_win_bash)
 
-                # fix generated autotools files
                 tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
                 self.run("chmod +x configure")
 
-                configure_args = self.get_configure_command_args()
-                autotools.configure(vars=autotools_vars, args=configure_args)
+                autotools, autotools_vars = self._configure_autotools()
+
                 autotools.make(vars=autotools_vars)
 
     def _configure_autotools_vars(self):
@@ -345,8 +343,8 @@ class LibcurlConan(ConanFile):
 
                 self._autotools.defines.append('_AMD64_')
 
-            configure_args = self.get_configure_command_args()
-            self._autotools.configure(vars=autotools_vars, args=configure_args)
+            configure_args, host = self.get_configure_command_args()
+            self._autotools.configure(vars=autotools_vars, args=configure_args, host=host)
 
         return self._autotools, self._configure_autotools_vars()
 
