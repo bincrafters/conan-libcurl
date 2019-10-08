@@ -25,7 +25,8 @@ class LibcurlConan(ConanFile):
                "with_winssl": [True, False],
                "disable_threads": [True, False],
                "with_ldap": [True, False],
-               "custom_cacert": [True, False],
+               "with_ca_bundle": "ANY",
+               "with_ca_path": "ANY",
                "darwin_ssl": [True, False],
                "with_libssh2": [True, False],
                "with_libidn": [True, False],
@@ -42,7 +43,8 @@ class LibcurlConan(ConanFile):
                        'with_winssl': False,
                        'disable_threads': False,
                        'with_ldap': False,
-                       'custom_cacert': False,
+                       'with_ca_bundle': None,
+                       'with_ca_path': None,
                        'darwin_ssl': True,
                        'with_libssh2': False,
                        'with_libidn': False,
@@ -206,8 +208,15 @@ class LibcurlConan(ConanFile):
         if not self.options.with_ldap:
             params.append("--disable-ldap")
 
-        if self.options.custom_cacert:
-            params.append('--with-ca-bundle=cacert.pem')
+        if self.options.with_ca_bundle == False:
+            params.append("--without-ca-bundle")
+        elif self.options.with_ca_bundle:
+            params.append("--with-ca-bundle=" + str(self.options.with_ca_bundle))
+
+        if self.options.with_ca_path == False:
+            params.append('--without-ca-path')
+        elif self.options.with_ca_path:
+            params.append("--with-ca-path=" + str(self.options.with_ca_path))
 
         # Cross building flags
         if tools.cross_building(self.settings):
@@ -340,6 +349,14 @@ class LibcurlConan(ConanFile):
         cmake.definitions['CURL_STATICLIB'] = not self.options.shared
         cmake.definitions['CMAKE_DEBUG_POSTFIX'] = ''
         cmake.definitions['CMAKE_USE_LIBSSH2'] = self.options.with_libssh2
+        if self.options.with_ca_bundle == False:
+            cmake.definitions['CURL_CA_BUNDLE'] = 'none'
+        elif self.options.with_ca_bundle:
+            cmake.definitions['CURL_CA_BUNDLE'] = self.options.with_ca_bundle
+        if self.options.with_ca_path == False:
+            cmake.definitions['CURL_CA_PATH'] = 'none'
+        elif self.options.with_ca_path:
+            cmake.definitions['CURL_CA_PATH'] = self.options.with_ca_path
 
         # all these options are exclusive. set just one of them
         # mac builds do not use cmake so don't even bother about darwin_ssl
