@@ -33,6 +33,7 @@ class LibcurlConan(ConanFile):
                "with_libmetalink": [True, False],
                "with_libpsl": [True, False],
                "with_largemaxwritesize": [True, False],
+               "with_largefile": [True, False],
                "with_nghttp2": [True, False],
                "with_brotli": [True, False]}
     default_options = {'shared': False,
@@ -49,6 +50,7 @@ class LibcurlConan(ConanFile):
                        'with_libmetalink': False,
                        'with_libpsl': False,
                        'with_largemaxwritesize': False,
+                       "with_largefile": True,
                        'with_nghttp2': False,
                        'with_brotli': False
                        }
@@ -110,6 +112,9 @@ class LibcurlConan(ConanFile):
         if self.settings.os == "Windows":
             self.options.remove("fPIC")
 
+        if self.settings.os != "Linux":
+            self.options.remove("with_largefile")
+
     def requirements(self):
         if self.options.with_openssl:
             if self.settings.os == "Macos" and self.options.darwin_ssl:
@@ -160,6 +165,9 @@ class LibcurlConan(ConanFile):
         params.append("--without-libmetalink" if not self.options.with_libmetalink else "--with-libmetalink")
         params.append("--without-libpsl" if not self.options.with_libpsl else "--with-libpsl")
         params.append("--without-brotli" if not self.options.with_brotli else "--with-brotli")
+
+        if not self.options.get_safe("with_largefile"):
+            params.append("--disable-largefile")
 
         if self.settings.os == "Macos" and self.options.darwin_ssl:
             params.append("--with-darwinssl")
