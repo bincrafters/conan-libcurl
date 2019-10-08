@@ -218,24 +218,34 @@ class LibcurlConan(ConanFile):
         elif self.options.with_ca_path:
             params.append("--with-ca-path=" + str(self.options.with_ca_path))
 
+        host = None
         # Cross building flags
-        if tools.cross_building(self.settings):
-            if self.settings.os == "Linux" and "arm" in self.settings.arch:
-                params.append('--host=%s' % self.get_linux_arm_host())
+        if tools.cross_building(self.settings) and self.settings.os in ["Linux", "iOS"]:
+            host = self.get_host()
 
-        return params
+        return params, host
 
-    def get_linux_arm_host(self):
+    def get_host(self):
         arch = None
         if self.settings.os == 'Linux':
-            arch = 'arm-linux-gnu'
             # aarch64 could be added by user
             if 'aarch64' in self.settings.arch:
                 arch = 'aarch64-linux-gnu'
-            elif 'arm' in self.settings.arch and 'hf' in self.settings.arch:
-                arch = 'arm-linux-gnueabihf'
-            elif 'arm' in self.settings.arch and self.arm_version(str(self.settings.arch)) > 4:
-                arch = 'arm-linux-gnueabi'
+            elif 'arm' in self.settings.arch:
+                if 'hf' in self.settings.arch:
+                    arch = 'arm-linux-gnueabihf'
+                elif self.arm_version(str(self.settings.arch)) > 4:
+                    arch = 'arm-linux-gnueabi'
+                else:
+                    arch = 'arm-linux-gnu'
+
+        elif self.settings.os == "iOS":
+            if self.settings.arch == "armv8":
+                arch = 'aarch64-darwin-ios'
+            elif "arm" in self.settings.arch:
+                arch = 'arm-darwin-ios'
+            else:
+                arch = '%s-darwin-ios' % self.settings.arch
         return arch
 
     def arm_version(self, arch):
