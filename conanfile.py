@@ -25,7 +25,8 @@ class LibcurlConan(ConanFile):
                "with_winssl": [True, False],
                "disable_threads": [True, False],
                "with_ldap": [True, False],
-               "custom_cacert": [True, False],
+               "with_ca_bundle": "ANY",
+               "with_ca_path": "ANY",
                "darwin_ssl": [True, False],
                "with_libssh2": [True, False],
                "with_libidn": [True, False],
@@ -33,6 +34,7 @@ class LibcurlConan(ConanFile):
                "with_libmetalink": [True, False],
                "with_libpsl": [True, False],
                "with_largemaxwritesize": [True, False],
+               "with_largefile": [True, False],
                "with_nghttp2": [True, False],
                "with_brotli": [True, False]}
     default_options = {'shared': False,
@@ -41,7 +43,8 @@ class LibcurlConan(ConanFile):
                        'with_winssl': False,
                        'disable_threads': False,
                        'with_ldap': False,
-                       'custom_cacert': False,
+                       'with_ca_bundle': None,
+                       'with_ca_path': None,
                        'darwin_ssl': True,
                        'with_libssh2': False,
                        'with_libidn': False,
@@ -49,6 +52,7 @@ class LibcurlConan(ConanFile):
                        'with_libmetalink': False,
                        'with_libpsl': False,
                        'with_largemaxwritesize': False,
+                       "with_largefile": True,
                        'with_nghttp2': False,
                        'with_brotli': False
                        }
@@ -110,6 +114,9 @@ class LibcurlConan(ConanFile):
         if self.settings.os == "Windows":
             self.options.remove("fPIC")
 
+        if self.settings.os != "Linux":
+            self.options.remove("with_largefile")
+
     def requirements(self):
         if self.options.with_openssl:
             if self.settings.os == "Macos" and self.options.darwin_ssl:
@@ -161,6 +168,9 @@ class LibcurlConan(ConanFile):
         params.append("--without-libpsl" if not self.options.with_libpsl else "--with-libpsl")
         params.append("--without-brotli" if not self.options.with_brotli else "--with-brotli")
 
+        if not self.options.get_safe("with_largefile"):
+            params.append("--disable-largefile")
+
         if self.settings.os == "Macos" and self.options.darwin_ssl:
             params.append("--with-darwinssl")
             params.append("--without-ssl")
@@ -198,27 +208,44 @@ class LibcurlConan(ConanFile):
         if not self.options.with_ldap:
             params.append("--disable-ldap")
 
-        if self.options.custom_cacert:
-            params.append('--with-ca-bundle=cacert.pem')
+        if self.options.with_ca_bundle == False:
+            params.append("--without-ca-bundle")
+        elif self.options.with_ca_bundle:
+            params.append("--with-ca-bundle=" + str(self.options.with_ca_bundle))
 
+        if self.options.with_ca_path == False:
+            params.append('--without-ca-path')
+        elif self.options.with_ca_path:
+            params.append("--with-ca-path=" + str(self.options.with_ca_path))
+
+        host = None
         # Cross building flags
-        if tools.cross_building(self.settings):
-            if self.settings.os == "Linux" and "arm" in self.settings.arch:
-                params.append('--host=%s' % self.get_linux_arm_host())
+        if tools.cross_building(self.settings) and self.settings.os in ["Linux", "iOS"]:
+            host = self.get_host()
 
-        return params
+        return params, host
 
-    def get_linux_arm_host(self):
+    def get_host(self):
         arch = None
         if self.settings.os == 'Linux':
-            arch = 'arm-linux-gnu'
             # aarch64 could be added by user
             if 'aarch64' in self.settings.arch:
                 arch = 'aarch64-linux-gnu'
-            elif 'arm' in self.settings.arch and 'hf' in self.settings.arch:
-                arch = 'arm-linux-gnueabihf'
-            elif 'arm' in self.settings.arch and self.arm_version(str(self.settings.arch)) > 4:
-                arch = 'arm-linux-gnueabi'
+            elif 'arm' in self.settings.arch:
+                if 'hf' in self.settings.arch:
+                    arch = 'arm-linux-gnueabihf'
+                elif self.arm_version(str(self.settings.arch)) > 4:
+                    arch = 'arm-linux-gnueabi'
+                else:
+                    arch = 'arm-linux-gnu'
+
+        elif self.settings.os == "iOS":
+            if self.settings.arch == "armv8":
+                arch = 'aarch64-darwin-ios'
+            elif "arm" in self.settings.arch:
+                arch = 'arm-darwin-ios'
+            else:
+                arch = '%s-darwin-ios' % self.settings.arch
         return arch
 
     def arm_version(self, arch):
@@ -274,17 +301,15 @@ class LibcurlConan(ConanFile):
         with tools.environment_append(env_run.vars):
             with tools.chdir(self._source_subfolder):
                 use_win_bash = self.is_mingw and not tools.cross_building(self.settings)
-                autotools, autotools_vars = self._configure_autotools()
 
                 # autoreconf
                 self.run('./buildconf', win_bash=use_win_bash)
 
-                # fix generated autotools files
                 tools.replace_in_file("configure", "-install_name \\$rpath/", "-install_name ")
                 self.run("chmod +x configure")
 
-                configure_args = self.get_configure_command_args()
-                autotools.configure(vars=autotools_vars, args=configure_args)
+                autotools, autotools_vars = self._configure_autotools()
+
                 autotools.make(vars=autotools_vars)
 
     def _configure_autotools_vars(self):
@@ -318,8 +343,8 @@ class LibcurlConan(ConanFile):
 
                 self._autotools.defines.append('_AMD64_')
 
-            configure_args = self.get_configure_command_args()
-            self._autotools.configure(vars=autotools_vars, args=configure_args)
+            configure_args, host = self.get_configure_command_args()
+            self._autotools.configure(vars=autotools_vars, args=configure_args, host=host)
 
         return self._autotools, self._configure_autotools_vars()
 
@@ -332,6 +357,14 @@ class LibcurlConan(ConanFile):
         cmake.definitions['CURL_STATICLIB'] = not self.options.shared
         cmake.definitions['CMAKE_DEBUG_POSTFIX'] = ''
         cmake.definitions['CMAKE_USE_LIBSSH2'] = self.options.with_libssh2
+        if self.options.with_ca_bundle == False:
+            cmake.definitions['CURL_CA_BUNDLE'] = 'none'
+        elif self.options.with_ca_bundle:
+            cmake.definitions['CURL_CA_BUNDLE'] = self.options.with_ca_bundle
+        if self.options.with_ca_path == False:
+            cmake.definitions['CURL_CA_PATH'] = 'none'
+        elif self.options.with_ca_path:
+            cmake.definitions['CURL_CA_PATH'] = self.options.with_ca_path
 
         # all these options are exclusive. set just one of them
         # mac builds do not use cmake so don't even bother about darwin_ssl
