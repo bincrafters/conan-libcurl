@@ -168,6 +168,9 @@ class LibcurlConan(ConanFile):
         params.append("--without-libpsl" if not self.options.with_libpsl else "--with-libpsl")
         params.append("--without-brotli" if not self.options.with_brotli else "--with-brotli")
 
+        if self.settings.build_type == 'Debug':
+            params.append("--enable-debug")
+
         if not self.options.get_safe("with_largefile"):
             params.append("--disable-largefile")
 
