@@ -12,7 +12,6 @@ class LibcurlConan(ConanFile):
     topics = ("conan", "libcurl", "data-transfer")
     url = "http://github.com/bincrafters/conan-libcurl"
     homepage = "http://curl.haxx.se"
-    author = "Bincrafters <bincrafters@gmail.com>"
     license = "MIT"
     exports = ["LICENSE.md"]
     exports_sources = ["lib_Makefile_add.am", "CMakeLists.txt"]
@@ -129,7 +128,7 @@ class LibcurlConan(ConanFile):
             if self.settings.compiler != "Visual Studio":
                 self.requires.add("libssh2/1.8.2")
         if self.options.with_nghttp2:
-            self.requires.add("nghttp2/1.38.0@bincrafters/stable")
+            self.requires.add("libnghttp2/1.39.2")
 
         self.requires.add("zlib/1.2.11")
 
@@ -192,7 +191,7 @@ class LibcurlConan(ConanFile):
             params.append("--without-libssh2")
 
         if self.options.with_nghttp2:
-            params.append("--with-nghttp2=%s" % self.deps_cpp_info["nghttp2"].rootpath.replace('\\', '/'))
+            params.append("--with-nghttp2=%s" % self.deps_cpp_info["libnghttp2"].rootpath.replace('\\', '/'))
         else:
             params.append("--without-nghttp2")
 
